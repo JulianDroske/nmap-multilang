@@ -1,4 +1,3 @@
-#include "./multilang/zh_CN/timing.h"
 
 /***************************************************************************
  * timing.cc -- Functions related to computing scan timing (such as        *
@@ -104,7 +103,7 @@ void adjust_timeouts2(const struct timeval *sent,
   long delta = 0;
 
   if (o.debugging > 3) {
-    log_write(LOG_STDOUT, str_Timeo_41_37d32_592867772, to->srtt, to->rttvar, to->timeout);
+    log_write(LOG_STDOUT, "Timeout vals: srtt: %d rttvar: %d to: %d ", to->srtt, to->rttvar, to->timeout);
   }
 
   delta = TIMEVAL_SUBTRACT(*received, *sent);
@@ -115,7 +114,7 @@ void adjust_timeouts2(const struct timeval *sent,
      it was sent.  So I will allow small negative RTT numbers */
   if (delta < 0 && delta > -50000) {
     if (o.debugging > 2)
-      log_write(LOG_STDOUT, str_Small_113_us92n_214950369, delta, 10000);
+      log_write(LOG_STDOUT, "Small negative delta (probably due to libpcap time / gettimeofday() discrepancy) - adjusting from %lius to %dus\n", delta, 10000);
     delta = 10000;
   }
 
@@ -130,14 +129,14 @@ void adjust_timeouts2(const struct timeval *sent,
 
     if (delta >= 8000000 || delta < 0) {
       if (o.verbose)
-        error(str_37s58_66_ime46_1975506617, __func__, delta);
+        error("%s: packet supposedly had rtt of %ld microseconds.  Ignoring time.", __func__, delta);
       return;
     }
     rttdelta = delta - to->srtt;
     /* sanity check 2*/
     if (rttdelta > 1500000 && rttdelta > 3 * to->srtt + 2 * to->rttvar) {
       if (o.debugging) {
-        log_write(LOG_STDOUT, str_Bogus_44_ng92n_1206240007, rttdelta, to->srtt);
+        log_write(LOG_STDOUT, "Bogus rttdelta: %ld (srtt %d) ... ignoring\n", rttdelta, to->srtt);
       }
       return;
     }
@@ -146,7 +145,7 @@ void adjust_timeouts2(const struct timeval *sent,
     to->timeout = to->srtt + (to->rttvar << 2);
   }
   if (to->rttvar > 2300000) {
-    error(str_RTTVA_55_22460_79275666);
+    error("RTTVAR has grown to over 2.3 seconds, decreasing to 2.0");
     to->rttvar = 2000000;
   }
 
@@ -159,7 +158,7 @@ void adjust_timeouts2(const struct timeval *sent,
     to->timeout = MAX((unsigned) to->timeout, o.scan_delay * 1000);
 
   if (o.debugging > 3) {
-    log_write(LOG_STDOUT, str_delta_42_7d92n_274710271, delta, to->srtt, to->rttvar, to->timeout);
+    log_write(LOG_STDOUT, "delta %ld ==> srtt: %d rttvar: %d to: %d\n", delta, to->srtt, to->rttvar, to->timeout);
   }
 
   /* if (to->srtt < 0 || to->rttvar < 0 || to->timeout < 0 || delta < -50000000 ||
@@ -194,7 +193,7 @@ void enforce_scan_delay(struct timeval *tv) {
   time_diff = TIMEVAL_MSEC_SUBTRACT(now, lastcall);
   if (time_diff < (int) o.scan_delay) {
     if (o.debugging > 1) {
-      log_write(LOG_PLAIN, str_Sleep_38_4192n_455600061, o.scan_delay - time_diff, __func__);
+      log_write(LOG_PLAIN, "Sleeping for %d milliseconds in %s()\n", o.scan_delay - time_diff, __func__);
     }
     usleep((o.scan_delay - time_diff) * 1000);
     gettimeofday(&lastcall, NULL);
@@ -635,12 +634,12 @@ bool ScanProgressMeter::printStats(double perc_done,
   // data for decent timing estimates. Also with perc_done == 0
   // these elements will be nonsensical.
   if (perc_done < 0.01) {
-    log_write(LOG_STDOUT, str_37s32_30_ne92n_1123454496,
+    log_write(LOG_STDOUT, "%s Timing: About %.2f%% done\n",
         scantypestr, perc_done * 100);
-    xml_open_start_tag(str_taskp_12_gress_1628676786);
-    xml_attribute(str_task_4_task_3552645, str_37s_2_37s_50831, scantypestr);
-    xml_attribute(str_time_4_time_3560141, str_37lu_3_37lu_1575661, (unsigned long) now->tv_sec);
-    xml_attribute(str_perce_7_rcent_678927291, str_37462_4_7462f_1512483034, perc_done * 100);
+    xml_open_start_tag("taskprogress");
+    xml_attribute("task", "%s", scantypestr);
+    xml_attribute("time", "%lu", (unsigned long) now->tv_sec);
+    xml_attribute("percent", "%.2f", perc_done * 100);
     xml_close_empty_tag();
     xml_newline();
     log_flush(LOG_STDOUT|LOG_XML);
@@ -658,26 +657,26 @@ bool ScanProgressMeter::printStats(double perc_done,
   err = n_localtime(&timet, &ltime);
 
   if (!err) {
-    log_write(LOG_STDOUT, str_37s32_74_4192n_1873605323,
+    log_write(LOG_STDOUT, "%s Timing: About %.2f%% done; ETC: %02d:%02d (%.f:%02.f:%02.f remaining)\n",
         scantypestr, perc_done * 100, ltime.tm_hour, ltime.tm_min,
         floor(time_left_s / 60.0 / 60.0),
         floor(fmod(time_left_s / 60.0, 60.0)),
         floor(fmod(time_left_s, 60.0)));
   }
   else {
-    log_write(LOG_STDERR, str_Timin_35_7s92n_1625768100, (double) timet, strerror(err));
-    log_write(LOG_STDOUT, str_37s32_72_4192n_1443556794,
+    log_write(LOG_STDERR, "Timing error: n_localtime(%f): %s\n", (double) timet, strerror(err));
+    log_write(LOG_STDOUT, "%s Timing: About %.2f%% done; ETC: Unknown (%.f:%02.f:%02.f remaining)\n",
         scantypestr, perc_done * 100,
         floor(time_left_s / 60.0 / 60.0),
         floor(fmod(time_left_s / 60.0, 60.0)),
         floor(fmod(time_left_s, 60.0)));
   }
-  xml_open_start_tag(str_taskp_12_gress_1628676786);
-  xml_attribute(str_task_4_task_3552645, str_37s_2_37s_50831, scantypestr);
-  xml_attribute(str_time_4_time_3560141, str_37lu_3_37lu_1575661, (unsigned long) now->tv_sec);
-  xml_attribute(str_perce_7_rcent_678927291, str_37462_4_7462f_1512483034, perc_done * 100);
-  xml_attribute(str_remai_9_ining_869838326, str_3746f_3_3746f_48789824, time_left_s);
-  xml_attribute(str_etc_3_etc_100756, str_37lu_3_37lu_1575661, (unsigned long) last_est.tv_sec);
+  xml_open_start_tag("taskprogress");
+  xml_attribute("task", "%s", scantypestr);
+  xml_attribute("time", "%lu", (unsigned long) now->tv_sec);
+  xml_attribute("percent", "%.2f", perc_done * 100);
+  xml_attribute("remaining", "%.f", time_left_s);
+  xml_attribute("etc", "%lu", (unsigned long) last_est.tv_sec);
   xml_close_empty_tag();
   xml_newline();
   log_flush(LOG_STDOUT|LOG_XML);
@@ -707,35 +706,35 @@ bool ScanProgressMeter::beginOrEndTask(const struct timeval *now, const char *ad
   tv_sec = now->tv_sec;
   err = n_localtime(&tv_sec, &tm);
   if (err)
-    log_write(LOG_STDERR, str_Timin_35_7s92n_1625768100, (double) tv_sec, strerror(err));
+    log_write(LOG_STDERR, "Timing error: n_localtime(%f): %s\n", (double) tv_sec, strerror(err));
   if (beginning) {
     if (!err)
-      log_write(LOG_STDOUT, str_Initi_26_3702d_9536888, scantypestr, tm.tm_hour, tm.tm_min);
+      log_write(LOG_STDOUT, "Initiating %s at %02d:%02d", scantypestr, tm.tm_hour, tm.tm_min);
     else
-      log_write(LOG_STDOUT, str_Initi_13_3237s_693094310, scantypestr);
-    xml_open_start_tag(str_taskb_9_begin_183234116);
-    xml_attribute(str_task_4_task_3552645, str_37s_2_37s_50831, scantypestr);
-    xml_attribute(str_time_4_time_3560141, str_37lu_3_37lu_1575661, (unsigned long) now->tv_sec);
+      log_write(LOG_STDOUT, "Initiating %s", scantypestr);
+    xml_open_start_tag("taskbegin");
+    xml_attribute("task", "%s", scantypestr);
+    xml_attribute("time", "%lu", (unsigned long) now->tv_sec);
     if (additional_info) {
-      log_write(LOG_STDOUT, str_32403_5_37s41_416092911, additional_info);
-      xml_attribute(str_extra_9_ainfo_252677954, str_37s_2_37s_50831, additional_info);
+      log_write(LOG_STDOUT, " (%s)", additional_info);
+      xml_attribute("extrainfo", "%s", additional_info);
     }
-    log_write(LOG_STDOUT, str_92n_2_92n_56437);
+    log_write(LOG_STDOUT, "\n");
     xml_close_empty_tag();
     xml_newline();
   } else {
     if (!err)
-      log_write(LOG_STDOUT, str_Compl_40_apsed_1762908970, scantypestr, tm.tm_hour, tm.tm_min, TIMEVAL_MSEC_SUBTRACT(*now, begin) / 1000.0);
+      log_write(LOG_STDOUT, "Completed %s at %02d:%02d, %.2fs elapsed", scantypestr, tm.tm_hour, tm.tm_min, TIMEVAL_MSEC_SUBTRACT(*now, begin) / 1000.0);
     else
-      log_write(LOG_STDOUT, str_Compl_27_apsed_819496344, scantypestr, TIMEVAL_MSEC_SUBTRACT(*now, begin) / 1000.0);
-    xml_open_start_tag(str_taske_7_skend_1537234634);
-    xml_attribute(str_task_4_task_3552645, str_37s_2_37s_50831, scantypestr);
-    xml_attribute(str_time_4_time_3560141, str_37lu_3_37lu_1575661, (unsigned long) now->tv_sec);
+      log_write(LOG_STDOUT, "Completed %s, %.2fs elapsed", scantypestr, TIMEVAL_MSEC_SUBTRACT(*now, begin) / 1000.0);
+    xml_open_start_tag("taskend");
+    xml_attribute("task", "%s", scantypestr);
+    xml_attribute("time", "%lu", (unsigned long) now->tv_sec);
     if (additional_info) {
-      log_write(LOG_STDOUT, str_32403_5_37s41_416092911, additional_info);
-      xml_attribute(str_extra_9_ainfo_252677954, str_37s_2_37s_50831, additional_info);
+      log_write(LOG_STDOUT, " (%s)", additional_info);
+      xml_attribute("extrainfo", "%s", additional_info);
     }
-    log_write(LOG_STDOUT, str_92n_2_92n_56437);
+    log_write(LOG_STDOUT, "\n");
     xml_close_empty_tag();
     xml_newline();
   }

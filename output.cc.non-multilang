@@ -1,4 +1,3 @@
-#include "./multilang/zh_CN/output.h"
 
 /***************************************************************************
  * output.cc -- Handles the Nmap output system.  This currently involves   *
@@ -117,7 +116,7 @@ static void skid_output(char *s) {
         break;
       case 'i':
       case 'I':
-        s[i] = str_33124_3_31241_1508695742[get_random_u8() % 3];
+        s[i] = "!|1"[get_random_u8() % 3];
         break;
         /*      case 'k': s[i]='c'; break;
            case 'K': s[i]='C'; break; */
@@ -147,7 +146,7 @@ static void skid_output(char *s) {
     }
 }
 
-/* Remove all str_92nSF_5_nSF58_583688747 from fingerprints */
+/* Remove all "\nSF:" from fingerprints */
 static char *servicefp_sf_remove(const char *str) {
   char *temp = (char *) safe_malloc(strlen(str) + 1);
   char *dst = temp, *src = (char *) str;
@@ -178,31 +177,31 @@ static char *servicefp_sf_remove(const char *str) {
 // serviceDeduction.  This function should only be called if ether
 // the service name or the service fingerprint is non-null.
 static void print_xml_service(const struct serviceDeductions *sd) {
-  xml_open_start_tag(str_servi_7_rvice_1984153269);
+  xml_open_start_tag("service");
 
-  xml_attribute(str_name_4_name_3373707, str_37s_2_37s_50831, sd->name ? sd->name : str_unkno_7_known_284840886);
+  xml_attribute("name", "%s", sd->name ? sd->name : "unknown");
   if (sd->product)
-    xml_attribute(str_produ_7_oduct_309474065, str_37s_2_37s_50831, sd->product);
+    xml_attribute("product", "%s", sd->product);
   if (sd->version)
-    xml_attribute(str_versi_7_rsion_351608024, str_37s_2_37s_50831, sd->version);
+    xml_attribute("version", "%s", sd->version);
   if (sd->extrainfo)
-    xml_attribute(str_extra_9_ainfo_252677954, str_37s_2_37s_50831, sd->extrainfo);
+    xml_attribute("extrainfo", "%s", sd->extrainfo);
   if (sd->hostname)
-    xml_attribute(str_hostn_8_tname_299803597, str_37s_2_37s_50831, sd->hostname);
+    xml_attribute("hostname", "%s", sd->hostname);
   if (sd->ostype)
-    xml_attribute(str_ostyp_6_stype_1007351010, str_37s_2_37s_50831, sd->ostype);
+    xml_attribute("ostype", "%s", sd->ostype);
   if (sd->devicetype)
-    xml_attribute(str_devic_10_etype_782144144, str_37s_2_37s_50831, sd->devicetype);
+    xml_attribute("devicetype", "%s", sd->devicetype);
   if (sd->service_fp) {
     char *servicefp = servicefp_sf_remove(sd->service_fp);
-    xml_attribute(str_servi_9_icefp_194184641, str_37s_2_37s_50831, servicefp);
+    xml_attribute("servicefp", "%s", servicefp);
     free(servicefp);
   }
 
   if (sd->service_tunnel == SERVICE_TUNNEL_SSL)
-    xml_attribute(str_tunne_6_unnel_862547864, str_ssl_3_ssl_114188);
-  xml_attribute(str_metho_6_ethod_1077554975, str_37s_2_37s_50831, (sd->dtype == SERVICE_DETECTION_TABLE) ? str_table_5_table_110115790 : str_probe_6_robed_979816780);
-  xml_attribute(str_conf_4_conf_3059492, str_37i_2_37i_50821, sd->name_confidence);
+    xml_attribute("tunnel", "ssl");
+  xml_attribute("method", "%s", (sd->dtype == SERVICE_DETECTION_TABLE) ? "table" : "probed");
+  xml_attribute("conf", "%i", sd->name_confidence);
 
   if (sd->cpe.empty()) {
     xml_close_empty_tag();
@@ -211,8 +210,8 @@ static void print_xml_service(const struct serviceDeductions *sd) {
 
     xml_close_start_tag();
     for (i = 0; i < sd->cpe.size(); i++) {
-      xml_start_tag(str_cpe_3_cpe_98712);
-      xml_write_escaped(str_37s_2_37s_50831, sd->cpe[i]);
+      xml_start_tag("cpe");
+      xml_write_escaped("%s", sd->cpe[i]);
       xml_end_tag();
     }
     xml_end_tag();
@@ -227,12 +226,12 @@ void win32_fatal_raw_sockets(const char *devname) {
     return;
 
   if (devname != NULL) {
-    fatal(str_Only3_65_nd92n_1088054302
-          str_92343_65_on92n_562137941
-          str_for32_14_can46_559930980, devname);
+    fatal("Only ethernet devices can be used for raw scans on Windows, and\n"
+          "\"%s\" is not an ethernet device. Use the --unprivileged option\n"
+          "for this scan.", devname);
   } else {
-    fatal(str_Only3_65_se92n_1429210256
-          str_the32_40_can46_1486694509);
+    fatal("Only ethernet devices can be used for raw scans on Windows. Use\n"
+          "the --unprivileged option for this scan.");
   }
 }
 
@@ -253,7 +252,7 @@ static void print_iflist_pcap_mapping(const struct interface_info *iflist,
      the interfaces. */
   if (o.have_pcap) {
     if (pcap_findalldevs(&pcap_ifs, errbuf) == -1) {
-      fatal(str_pcap9_55_3237s_325620210, errbuf);
+      fatal("pcap_findalldevs(): Cannot retrieve pcap interfaces: %s", errbuf);
     }
     for (const pcap_if_t *p = pcap_ifs; p != NULL; p = p->next)
       leftover_pcap_ifs.push_front(p);
@@ -262,8 +261,8 @@ static void print_iflist_pcap_mapping(const struct interface_info *iflist,
   if (numifs > 0 || !leftover_pcap_ifs.empty()) {
     NmapOutputTable Tbl(1 + numifs + leftover_pcap_ifs.size(), 2);
 
-    Tbl.addItem(0, 0, false, str_DEV_3_DEV_67573);
-    Tbl.addItem(0, 1, false, str_WINDE_9_EVICE_1734630126);
+    Tbl.addItem(0, 0, false, "DEV");
+    Tbl.addItem(0, 1, false, "WINDEVICE");
 
     /* Show the libdnet names and what they map to. */
     for (i = 0; i < numifs; i++) {
@@ -280,7 +279,7 @@ static void print_iflist_pcap_mapping(const struct interface_info *iflist,
             leftover_pcap_ifs.erase(leftover_p);
         }
       } else {
-        Strncpy(pcap_name, str_60non_6_one62_1766892754, sizeof(pcap_name));
+        Strncpy(pcap_name, "<none>", sizeof(pcap_name));
       }
 
       Tbl.addItem(i + 1, 0, false, iflist[i].devname);
@@ -292,12 +291,12 @@ static void print_iflist_pcap_mapping(const struct interface_info *iflist,
     for (leftover_p = leftover_pcap_ifs.begin();
          leftover_p != leftover_pcap_ifs.end();
          leftover_p++) {
-      Tbl.addItem(i + 1, 0, false, str_60non_6_one62_1766892754);
+      Tbl.addItem(i + 1, 0, false, "<none>");
       Tbl.addItem(i + 1, 1, false, (*leftover_p)->name);
       i++;
     }
 
-    log_write(LOG_PLAIN, str_37s92_4_7s92n_1514362758, Tbl.printableTable(NULL));
+    log_write(LOG_PLAIN, "%s\n", Tbl.printableTable(NULL));
     log_flush_all();
   }
 
@@ -323,46 +322,46 @@ int print_iflist(void) {
   int i;
   /* First let's handle interfaces ... */
   if (iflist==NULL || numifs<=0) {
-    log_write(LOG_PLAIN, str_INTER_27_4192n_1745026483);
+    log_write(LOG_PLAIN, "INTERFACES: NONE FOUND(!)\n");
     if (o.debugging)
-      log_write(LOG_STDOUT, str_Reaso_12_7s92n_566124460, errstr);
+      log_write(LOG_STDOUT, "Reason: %s\n", errstr);
   } else {
     int devcol = 0, shortdevcol = 1, ipcol = 2, typecol = 3, upcol = 4, mtucol = 5, maccol = 6;
     Tbl = new NmapOutputTable(numifs + 1, 7);
-    Tbl->addItem(0, devcol, false, str_DEV_3_DEV_67573, 3);
-    Tbl->addItem(0, shortdevcol, false, str_40SHO_7_ORT41_1042342365, 7);
-    Tbl->addItem(0, ipcol, false, str_IP47M_7_7MASK_2096145450, 7);
-    Tbl->addItem(0, typecol, false, str_TYPE_4_TYPE_2590522, 4);
-    Tbl->addItem(0, upcol, false, str_UP_2_UP_2715, 2);
-    Tbl->addItem(0, mtucol, false, str_MTU_3_MTU_76686, 3);
-    Tbl->addItem(0, maccol, false, str_MAC_3_MAC_76079, 3);
+    Tbl->addItem(0, devcol, false, "DEV", 3);
+    Tbl->addItem(0, shortdevcol, false, "(SHORT)", 7);
+    Tbl->addItem(0, ipcol, false, "IP/MASK", 7);
+    Tbl->addItem(0, typecol, false, "TYPE", 4);
+    Tbl->addItem(0, upcol, false, "UP", 2);
+    Tbl->addItem(0, mtucol, false, "MTU", 3);
+    Tbl->addItem(0, maccol, false, "MAC", 3);
     for (i = 0; i < numifs; i++) {
       Tbl->addItem(i + 1, devcol, false, iflist[i].devfullname);
-      Tbl->addItemFormatted(i + 1, shortdevcol, false, str_4037s_4_37s41_328600656,
+      Tbl->addItemFormatted(i + 1, shortdevcol, false, "(%s)",
                             iflist[i].devname);
       address = inet_ntop_ez(&(iflist[i].addr), sizeof(iflist[i].addr));
-      Tbl->addItemFormatted(i + 1, ipcol, false, str_37s47_5_4737d_695826450,
-                            address == NULL ? str_40non_6_one41_957546191 : address,
+      Tbl->addItemFormatted(i + 1, ipcol, false, "%s/%d",
+                            address == NULL ? "(none)" : address,
                             iflist[i].netmask_bits);
       if (iflist[i].device_type == devt_ethernet) {
-        Tbl->addItem(i + 1, typecol, false, str_ether_8_ernet_1419358249);
+        Tbl->addItem(i + 1, typecol, false, "ethernet");
         Tbl->addItemFormatted(i + 1, maccol, false,
-                              str_3702X_29_3702X_877469763,
+                              "%02X:%02X:%02X:%02X:%02X:%02X",
                               iflist[i].mac[0], iflist[i].mac[1],
                               iflist[i].mac[2], iflist[i].mac[3],
                               iflist[i].mac[4], iflist[i].mac[5]);
       } else if (iflist[i].device_type == devt_loopback)
-        Tbl->addItem(i + 1, typecol, false, str_loopb_8_pback_2037065333);
+        Tbl->addItem(i + 1, typecol, false, "loopback");
       else if (iflist[i].device_type == devt_p2p)
-        Tbl->addItem(i + 1, typecol, false, str_point_11_point_692285906);
+        Tbl->addItem(i + 1, typecol, false, "point2point");
       else
-        Tbl->addItem(i + 1, typecol, false, str_other_5_other_106069776);
+        Tbl->addItem(i + 1, typecol, false, "other");
       Tbl->addItem(i + 1, upcol, false,
-                   (iflist[i].device_up ? str_up_2_up_3739 : str_down_4_down_3089570));
-      Tbl->addItemFormatted(i + 1, mtucol, false, str_37d_2_37d_50816, iflist[i].mtu);
+                   (iflist[i].device_up ? "up" : "down"));
+      Tbl->addItemFormatted(i + 1, mtucol, false, "%d", iflist[i].mtu);
     }
-    log_write(LOG_PLAIN, str_42424_60_4292n_212438981);
-    log_write(LOG_PLAIN, str_37s92_4_7s92n_1514362758, Tbl->printableTable(NULL));
+    log_write(LOG_PLAIN, "************************INTERFACES************************\n");
+    log_write(LOG_PLAIN, "%s\n", Tbl->printableTable(NULL));
     log_flush_all();
     delete Tbl;
   }
@@ -377,27 +376,27 @@ int print_iflist(void) {
   routes = getsysroutes(&numroutes, errstr, sizeof(errstr));
   u16 nbits;
   if (routes==NULL || numroutes<= 0) {
-    log_write(LOG_PLAIN, str_ROUTE_23_4192n_1843030211);
+    log_write(LOG_PLAIN, "ROUTES: NONE FOUND(!)\n");
     if (o.debugging)
-      log_write(LOG_STDOUT, str_Reaso_12_7s92n_566124460, errstr);
+      log_write(LOG_STDOUT, "Reason: %s\n", errstr);
   } else {
     int dstcol = 0, devcol = 1, metcol = 2, gwcol = 3;
     Tbl = new NmapOutputTable(numroutes + 1, 4);
-    Tbl->addItem(0, dstcol, false, str_DST47_8_7MASK_945715756, 8);
-    Tbl->addItem(0, devcol, false, str_DEV_3_DEV_67573, 3);
-    Tbl->addItem(0, metcol, false, str_METRI_6_ETRIC_2024216144, 6);
-    Tbl->addItem(0, gwcol, false, str_GATEW_7_TEWAY_528863780, 7);
+    Tbl->addItem(0, dstcol, false, "DST/MASK", 8);
+    Tbl->addItem(0, devcol, false, "DEV", 3);
+    Tbl->addItem(0, metcol, false, "METRIC", 6);
+    Tbl->addItem(0, gwcol, false, "GATEWAY", 7);
     for (i = 0; i < numroutes; i++) {
       nbits = routes[i].netmask_bits;
-      Tbl->addItemFormatted(i + 1, dstcol, false, str_37s47_5_4737d_695826450,
+      Tbl->addItemFormatted(i + 1, dstcol, false, "%s/%d",
       	inet_ntop_ez(&routes[i].dest, sizeof(routes[i].dest)), nbits);
       Tbl->addItem(i + 1, devcol, false, routes[i].device->devfullname);
-      Tbl->addItemFormatted(i + 1, metcol, false, str_37d_2_37d_50816, routes[i].metric);
+      Tbl->addItemFormatted(i + 1, metcol, false, "%d", routes[i].metric);
       if (!sockaddr_equal_zero(&routes[i].gw))
         Tbl->addItem(i + 1, gwcol, true, inet_ntop_ez(&routes[i].gw, sizeof(routes[i].gw)));
     }
-    log_write(LOG_PLAIN, str_42424_60_4292n_1267364013);
-    log_write(LOG_PLAIN, str_37s92_4_7s92n_1514362758, Tbl->printableTable(NULL));
+    log_write(LOG_PLAIN, "**************************ROUTES**************************\n");
+    log_write(LOG_PLAIN, "%s\n", Tbl->printableTable(NULL));
     log_flush_all();
     delete Tbl;
   }
@@ -412,11 +411,11 @@ static std::string escape_for_screen(const std::string s) {
   for (unsigned int i = 0; i < s.size(); i++) {
     char buf[5];
     unsigned char c = s[i];
-    // Printable and some whitespace ok. str_92r_2_92r_56441 not ok because it overwrites the line.
+    // Printable and some whitespace ok. "\r" not ok because it overwrites the line.
     if (c == '\t' || c == '\n' || (0x20 <= c && c <= 0x7e)) {
       r += c;
     } else {
-      Snprintf(buf, sizeof(buf), str_9292x_7_3702X_1618976084, c);
+      Snprintf(buf, sizeof(buf), "\\x%02X", c);
       r += buf;
     }
   }
@@ -439,7 +438,7 @@ std::string protect_xml(const std::string s) {
     if (c == '\t' || c == '\r' || c == '\n' || (0x20 <= c && c <= 0x7e)) {
       r += c;
     } else {
-      Snprintf(buf, sizeof(buf), str_9292x_7_3702X_1618976084, c);
+      Snprintf(buf, sizeof(buf), "\\x%02X", c);
       r += buf;
     }
   }
@@ -475,14 +474,14 @@ static char *formatScriptOutput(const ScriptResult *sr) {
     lines.push_back("");
   for (i = 0; i < lines.size(); i++) {
     if (i < lines.size() - 1)
-      result += str_12432_2_12432_46793682;
+      result += "| ";
     else
-      result += str_12495_2_12495_46793871;
+      result += "|_";
     if (i == 0)
-      result += std::string(sr->get_id()) + str_5832_2_5832_1634370;
+      result += std::string(sr->get_id()) + ": ";
     result += lines[i];
     if (i < lines.size() - 1)
-      result += str_92n_2_92n_56437;
+      result += "\n";
   }
 
   return strdup(result.c_str());
@@ -528,8 +527,8 @@ void printportoutput(const Target *currenths, const PortList *plist) {
   if (o.noportscan || numports == 0)
     return;
 
-  xml_start_tag(str_ports_5_ports_106854418);
-  log_write(LOG_MACHINE, str_Host5_13_37s41_1184206444, currenths->targetipstr(),
+  xml_start_tag("ports");
+  log_write(LOG_MACHINE, "Host: %s (%s)", currenths->targetipstr(),
             currenths->HostName());
 
   if ((o.verbose > 1 || o.debugging) && currenths->StartTime()) {
@@ -541,18 +540,18 @@ void printportoutput(const Target *currenths, const PortList *plist) {
     tm_sece = currenths->EndTime();
     err = n_localtime(&tm_secs, &tm);
     if (err) {
-      error(str_Error_22_3237s_857837152, strerror(err));
-      log_write(LOG_PLAIN, str_Scann_18_ds92n_606544151,
+      error("Error in localtime: %s", strerror(err));
+      log_write(LOG_PLAIN, "Scanned for %lds\n",
           (long) (tm_sece - tm_secs));
     }
     else {
-      if (strftime(tbufs, sizeof(tbufs), str_37Y45_20_3237Z_702900072, &tm) <= 0) {
-        error(str_Unabl_41_2time_1752385545);
-        log_write(LOG_PLAIN, str_Scann_18_ds92n_606544151,
+      if (strftime(tbufs, sizeof(tbufs), "%Y-%m-%d %H:%M:%S %Z", &tm) <= 0) {
+        error("Unable to properly format host start time");
+        log_write(LOG_PLAIN, "Scanned for %lds\n",
             (long) (tm_sece - tm_secs));
       }
       else {
-        log_write(LOG_PLAIN, str_Scann_24_ds92n_909527367,
+        log_write(LOG_PLAIN, "Scanned at %s for %lds\n",
             tbufs, (long) (tm_sece - tm_secs));
       }
     }
@@ -563,9 +562,9 @@ void printportoutput(const Target *currenths, const PortList *plist) {
 
   while ((istate = plist->nextIgnoredState(prevstate)) != PORT_UNKNOWN) {
     i = plist->getStateCounts(istate);
-    xml_open_start_tag(str_extra_10_ports_763424258);
-    xml_attribute(str_state_5_state_109757585, str_37s_2_37s_50831, statenum2str(istate));
-    xml_attribute(str_count_5_count_94851343, str_37d_2_37d_50816, i);
+    xml_open_start_tag("extraports");
+    xml_attribute("state", "%s", statenum2str(istate));
+    xml_attribute("count", "%d", i);
     xml_close_start_tag();
     xml_newline();
 
@@ -575,45 +574,45 @@ void printportoutput(const Target *currenths, const PortList *plist) {
     if (prevstate == PORT_UNKNOWN) {
       // First time through, check special case
       if (numignoredports == numports) {
-        log_write(LOG_PLAIN, str_All32_51_4692n_504791704,
+        log_write(LOG_PLAIN, "All %d scanned ports on %s are in ignored states.\n",
             numignoredports, currenths->NameIP(hostname, sizeof(hostname)));
-        log_write(LOG_MACHINE, str_92t37_6_s5832_1508248182, (o.ipprotscan) ? str_Proto_9_ocols_1404658875 : str_Ports_5_Ports_77301746);
+        log_write(LOG_MACHINE, "\t%s: ", (o.ipprotscan) ? "Protocols" : "Ports");
         /* Grepable output supports only one ignored state. */
         if (plist->numIgnoredStates() == 1) {
-          log_write(LOG_MACHINE, str_92tIg_24_37d41_1408966640, statenum2str(istate), i);
+          log_write(LOG_MACHINE, "\tIgnored State: %s (%d)", statenum2str(istate), i);
         }
       }
-      log_write(LOG_PLAIN, str_Not32_11_n5832_1475516223);
+      log_write(LOG_PLAIN, "Not shown: ");
     } else {
-      log_write(LOG_PLAIN, str_4432_2_4432_1600735);
+      log_write(LOG_PLAIN, ", ");
     }
 
     if((currentr = reasons = get_state_reason_summary(plist, istate)) == NULL) {
-      log_write(LOG_PLAIN, str_37d32_10_7s37s_1630671345, i, statenum2str(istate),
-          o.ipprotscan ? str_proto_8_tocol_989163880 : str_port_4_port_3446913,
-          plist->getStateCounts(istate) == 1 ? "" : str_s_1_s_115);
+      log_write(LOG_PLAIN, "%d %s %s%s", i, statenum2str(istate),
+          o.ipprotscan ? "protocol" : "port",
+          plist->getStateCounts(istate) == 1 ? "" : "s");
       prevstate = istate;
       continue;
     }
 
     while(currentr != NULL) {
       if(currentr->count > 0) {
-        xml_open_start_tag(str_extra_12_asons_684290207);
-        xml_attribute(str_reaso_6_eason_934964668, str_37s_2_37s_50831, reason_str(currentr->reason_id, SINGULAR));
-        xml_attribute(str_count_5_count_94851343, str_37d_2_37d_50816, currentr->count);
-        xml_attribute(str_proto_5_proto_106940904, str_37s_2_37s_50831, IPPROTO2STR(currentr->proto));
-        xml_write_raw(str_32por_9_19234_1335105352);
+        xml_open_start_tag("extrareasons");
+        xml_attribute("reason", "%s", reason_str(currentr->reason_id, SINGULAR));
+        xml_attribute("count", "%d", currentr->count);
+        xml_attribute("proto", "%s", IPPROTO2STR(currentr->proto));
+        xml_write_raw(" ports=\"");
         output_rangelist_given_ports(LOG_XML, currentr->ports, currentr->count);
-        xml_write_raw(str_9234_2_9234_1747770);
+        xml_write_raw("\"");
         xml_close_empty_tag();
         xml_newline();
 
         if (currentr != reasons)
-          log_write(LOG_PLAIN, str_4432_2_4432_1600735);
-        log_write(LOG_PLAIN, str_37d32_18_37s41_1798706866,
+          log_write(LOG_PLAIN, ", ");
+        log_write(LOG_PLAIN, "%d %s %s %s%s (%s)",
             currentr->count, statenum2str(istate), IPPROTO2STR(currentr->proto),
-            o.ipprotscan ? str_proto_8_tocol_989163880 : str_port_4_port_3446913,
-            plist->getStateCounts(istate) == 1 ? "" : str_s_1_s_115,
+            o.ipprotscan ? "protocol" : "port",
+            plist->getStateCounts(istate) == 1 ? "" : "s",
             reason_str(currentr->reason_id, SINGULAR));
       }
       currentr = currentr->next;
@@ -624,7 +623,7 @@ void printportoutput(const Target *currenths, const PortList *plist) {
     prevstate = istate;
   }
 
-  log_write(LOG_PLAIN, str_92n_2_92n_56437);
+  log_write(LOG_PLAIN, "\n");
 
   if (numignoredports == numports) {
     // Nothing left to show.
@@ -660,17 +659,17 @@ void printportoutput(const Target *currenths, const PortList *plist) {
 
   // Lets start with the headers
   if (o.ipprotscan)
-    Tbl->addItem(0, portcol, false, str_PROTO_8_TOCOL_206537064, 8);
+    Tbl->addItem(0, portcol, false, "PROTOCOL", 8);
   else
-    Tbl->addItem(0, portcol, false, str_PORT_4_PORT_2461825, 4);
-  Tbl->addItem(0, statecol, false, str_STATE_5_STATE_79219825, 5);
-  Tbl->addItem(0, servicecol, false, str_SERVI_7_RVICE_1592831339, 7);
+    Tbl->addItem(0, portcol, false, "PORT", 4);
+  Tbl->addItem(0, statecol, false, "STATE", 5);
+  Tbl->addItem(0, servicecol, false, "SERVICE", 7);
   if (versioncol > 0)
-    Tbl->addItem(0, versioncol, false, str_VERSI_7_RSION_1069590712, 7);
+    Tbl->addItem(0, versioncol, false, "VERSION", 7);
   if (reasoncol > 0)
-    Tbl->addItem(0, reasoncol, false, str_REASO_6_EASON_1881635260, 6);
+    Tbl->addItem(0, reasoncol, false, "REASON", 6);
 
-  log_write(LOG_MACHINE, str_92t37_6_s5832_1508248182, (o.ipprotscan) ? str_Proto_9_ocols_1404658875 : str_Ports_5_Ports_77301746);
+  log_write(LOG_MACHINE, "\t%s: ", (o.ipprotscan) ? "Protocols" : "Ports");
 
   rowno = 1;
   if (o.ipprotscan) {
@@ -678,45 +677,45 @@ void printportoutput(const Target *currenths, const PortList *plist) {
     while ((current = plist->nextPort(current, &port, IPPROTO_IP, 0)) != NULL) {
       if (!plist->isIgnoredState(current->state, NULL)) {
         if (!first)
-          log_write(LOG_MACHINE, str_4432_2_4432_1600735);
+          log_write(LOG_MACHINE, ", ");
         else
           first = 0;
         if (o.reason) {
           if (current->reason.ttl)
-            Tbl->addItemFormatted(rowno, reasoncol, false, str_37s32_9_3237d_1938626691,
+            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d",
                                 port_reason_str(current->reason), current->reason.ttl);
           else
             Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
         }
         state = statenum2str(current->state);
         proto = nmap_getprotbynum(current->portno);
-        Snprintf(portinfo, sizeof(portinfo), str_37s_2_37s_50831, proto ? proto->p_name : str_unkno_7_known_284840886);
-        Tbl->addItemFormatted(rowno, portcol, false, str_37d_2_37d_50816, current->portno);
+        Snprintf(portinfo, sizeof(portinfo), "%s", proto ? proto->p_name : "unknown");
+        Tbl->addItemFormatted(rowno, portcol, false, "%d", current->portno);
         Tbl->addItem(rowno, statecol, true, state);
         Tbl->addItem(rowno, servicecol, true, portinfo);
-        log_write(LOG_MACHINE, str_37d47_9_37s47_1959233667, current->portno, state,
+        log_write(LOG_MACHINE, "%d/%s/%s/", current->portno, state,
                   (proto) ? proto->p_name : "");
-        xml_open_start_tag(str_port_4_port_3446913);
-        xml_attribute(str_proto_8_tocol_989163880, str_ip_2_ip_3367);
-        xml_attribute(str_porti_6_ortid_982480548, str_37d_2_37d_50816, current->portno);
+        xml_open_start_tag("port");
+        xml_attribute("protocol", "ip");
+        xml_attribute("portid", "%d", current->portno);
         xml_close_start_tag();
-        xml_open_start_tag(str_state_5_state_109757585);
-        xml_attribute(str_state_5_state_109757585, str_37s_2_37s_50831, state);
-        xml_attribute(str_reaso_6_eason_934964668, str_37s_2_37s_50831, reason_str(current->reason.reason_id, SINGULAR));
-        xml_attribute(str_reaso_10_95ttl_900484492, str_37d_2_37d_50816, current->reason.ttl);
+        xml_open_start_tag("state");
+        xml_attribute("state", "%s", state);
+        xml_attribute("reason", "%s", reason_str(current->reason.reason_id, SINGULAR));
+        xml_attribute("reason_ttl", "%d", current->reason.ttl);
         if (current->reason.ip_addr.sockaddr.sa_family != AF_UNSPEC) {
           struct sockaddr_storage ss;
           memcpy(&ss, &current->reason.ip_addr, sizeof(current->reason.ip_addr));
-          xml_attribute(str_reaso_9_n95ip_721784199, str_37s_2_37s_50831, inet_ntop_ez(&ss, sizeof(ss)));
+          xml_attribute("reason_ip", "%s", inet_ntop_ez(&ss, sizeof(ss)));
         }
         xml_close_empty_tag();
 
         if (proto && proto->p_name && *proto->p_name) {
           xml_newline();
-          xml_open_start_tag(str_servi_7_rvice_1984153269);
-          xml_attribute(str_name_4_name_3373707, str_37s_2_37s_50831, proto->p_name);
-          xml_attribute(str_conf_4_conf_3059492, str_8_1_8_56);
-          xml_attribute(str_metho_6_ethod_1077554975, str_table_5_table_110115790);
+          xml_open_start_tag("service");
+          xml_attribute("name", "%s", proto->p_name);
+          xml_attribute("conf", "8");
+          xml_attribute("method", "table");
           xml_close_empty_tag();
         }
         xml_end_tag(); /* port */
@@ -731,11 +730,11 @@ void printportoutput(const Target *currenths, const PortList *plist) {
     while ((current = plist->nextPort(current, &port, TCPANDUDPANDSCTP, 0)) != NULL) {
       if (!plist->isIgnoredState(current->state, NULL)) {
         if (!first)
-          log_write(LOG_MACHINE, str_4432_2_4432_1600735);
+          log_write(LOG_MACHINE, ", ");
         else
           first = 0;
         strcpy(protocol, IPPROTO2STR(current->proto));
-        Snprintf(portinfo, sizeof(portinfo), str_37d47_5_4737s_1125263700, current->portno, protocol);
+        Snprintf(portinfo, sizeof(portinfo), "%d/%s", current->portno, protocol);
         state = statenum2str(current->state);
         plist->getServiceDeductions(current->portno, current->proto, &sd);
         if (sd.service_fp && saved_servicefps.size() <= 8)
@@ -748,7 +747,7 @@ void printportoutput(const Target *currenths, const PortList *plist) {
         Tbl->addItem(rowno, servicecol, true, serviceinfo);
         if (o.reason) {
           if (current->reason.ttl)
-            Tbl->addItemFormatted(rowno, reasoncol, false, str_37s32_9_3237d_1938626691,
+            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d",
                                   port_reason_str(current->reason), current->reason.ttl);
           else
             Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
@@ -780,21 +779,21 @@ void printportoutput(const Target *currenths, const PortList *plist) {
         else {
           serviceinfo[0] = '\0';
         }
-        log_write(LOG_MACHINE, str_37d47_17_37s47_2000186269, current->portno,
+        log_write(LOG_MACHINE, "%d/%s/%s//%s//%s/", current->portno,
                   state, protocol, serviceinfo, grepvers);
 
-        xml_open_start_tag(str_port_4_port_3446913);
-        xml_attribute(str_proto_8_tocol_989163880, str_37s_2_37s_50831, protocol);
-        xml_attribute(str_porti_6_ortid_982480548, str_37d_2_37d_50816, current->portno);
+        xml_open_start_tag("port");
+        xml_attribute("protocol", "%s", protocol);
+        xml_attribute("portid", "%d", current->portno);
         xml_close_start_tag();
-        xml_open_start_tag(str_state_5_state_109757585);
-        xml_attribute(str_state_5_state_109757585, str_37s_2_37s_50831, state);
-        xml_attribute(str_reaso_6_eason_934964668, str_37s_2_37s_50831, reason_str(current->reason.reason_id, SINGULAR));
-        xml_attribute(str_reaso_10_95ttl_900484492, str_37d_2_37d_50816, current->reason.ttl);
+        xml_open_start_tag("state");
+        xml_attribute("state", "%s", state);
+        xml_attribute("reason", "%s", reason_str(current->reason.reason_id, SINGULAR));
+        xml_attribute("reason_ttl", "%d", current->reason.ttl);
         if (current->reason.ip_addr.sockaddr.sa_family != AF_UNSPEC) {
           struct sockaddr_storage ss;
           memcpy(&ss, &current->reason.ip_addr, sizeof(current->reason.ip_addr));
-          xml_attribute(str_reaso_9_n95ip_721784199, str_37s_2_37s_50831, inet_ntop_ez(&ss, sizeof(ss)));
+          xml_attribute("reason_ip", "%s", inet_ntop_ez(&ss, sizeof(ss)));
         }
         xml_close_empty_tag();
 
@@ -826,37 +825,37 @@ void printportoutput(const Target *currenths, const PortList *plist) {
     }
 
   }
-  /*  log_write(LOG_PLAIN,str_92n_2_92n_56437); */
+  /*  log_write(LOG_PLAIN,"\n"); */
   /* Grepable output supports only one ignored state. */
   if (plist->numIgnoredStates() == 1) {
     istate = plist->nextIgnoredState(PORT_UNKNOWN);
     if (plist->getStateCounts(istate) > 0)
-      log_write(LOG_MACHINE, str_92tIg_24_37d41_1408966640,
+      log_write(LOG_MACHINE, "\tIgnored State: %s (%d)",
                 statenum2str(istate), plist->getStateCounts(istate));
   }
   xml_end_tag(); /* ports */
   xml_newline();
 
   if (o.defeat_rst_ratelimit && o.TCPScan() && plist->getStateCounts(PORT_FILTERED) > 0) {
-    log_write(LOG_PLAIN, str_Some3_77_it92n_1528193449);
+    log_write(LOG_PLAIN, "Some closed ports may be reported as filtered due to --defeat-rst-ratelimit\n");
   }
 
   // Now we write the table for the user
-  log_write(LOG_PLAIN, str_37s_2_37s_50831, Tbl->printableTable(NULL));
+  log_write(LOG_PLAIN, "%s", Tbl->printableTable(NULL));
   delete Tbl;
 
   // There may be service fingerprints I would like the user to submit
   if (saved_servicefps.size() > 0) {
     int numfps = saved_servicefps.size();
-    log_write(LOG_PLAIN, str_37d32_49_ata46_357108296
-              str_32If3_61_owing_869952669
-              str_32fin_17_s32at_1302087396
-              str_32htt_52_5892n_1618793379,
-              numfps, (numfps > 1) ? str_s_1_s_115 : "", (numfps > 1) ? str_s_1_s_115 : "");
+    log_write(LOG_PLAIN, "%d service%s unrecognized despite returning data."
+              " If you know the service/version, please submit the following"
+              " fingerprint%s at"
+              " https://nmap.org/cgi-bin/submit.cgi?new-service :\n",
+              numfps, (numfps > 1) ? "s" : "", (numfps > 1) ? "s" : "");
     for (i = 0; i < numfps; i++) {
       if (numfps > 1)
-        log_write(LOG_PLAIN, str_61616_76_6192n_2140802678);
-      log_write(LOG_PLAIN, str_37s92_4_7s92n_1514362758, saved_servicefps[i]);
+        log_write(LOG_PLAIN, "==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============\n");
+      log_write(LOG_PLAIN, "%s\n", saved_servicefps[i]);
     }
   }
   log_flush_all();
@@ -870,7 +869,7 @@ void printportoutput(const Target *currenths, const PortList *plist) {
 #define MAX_STRFTIME_EXPANSION 10
 char *logfilename(const char *str, struct tm *tm) {
   char *ret, *end, *p;
-  // Max expansion: str_37F_2_37F_50786 => str_YYYY4_10_m45dd_1223187358
+  // Max expansion: "%F" => "YYYY-mm-dd"
   int retlen = strlen(str) * (MAX_STRFTIME_EXPANSION - 2) + 1;
   size_t written = 0;
 
@@ -890,17 +889,17 @@ char *logfilename(const char *str, struct tm *tm) {
         break;
 
       switch (*str) {
-        FTIME_CASE('H', str_37H_2_37H_50788);
-        FTIME_CASE('M', str_37M_2_37M_50793);
-        FTIME_CASE('S', str_37S_2_37S_50799);
-        FTIME_CASE('T', str_37H37_6_7M37S_368404170);
-        FTIME_CASE('R', str_37H37_4_7H37M_1513076101);
-        FTIME_CASE('m', str_37m_2_37m_50825);
-        FTIME_CASE('d', str_37d_2_37d_50816);
-        FTIME_CASE('y', str_37y_2_37y_50837);
-        FTIME_CASE('Y', str_37Y_2_37Y_50805);
-        FTIME_CASE('D', str_37m37_6_7d37y_1153012770);
-        FTIME_CASE('F', str_37Y45_8_4537d_203782444);
+        FTIME_CASE('H', "%H");
+        FTIME_CASE('M', "%M");
+        FTIME_CASE('S', "%S");
+        FTIME_CASE('T', "%H%M%S");
+        FTIME_CASE('R', "%H%M");
+        FTIME_CASE('m', "%m");
+        FTIME_CASE('d', "%d");
+        FTIME_CASE('y', "%y");
+        FTIME_CASE('Y', "%Y");
+        FTIME_CASE('D', "%m%d%y");
+        FTIME_CASE('F', "%Y-%m-%d");
       default:
         *p++ = *str;
         continue;
@@ -967,14 +966,14 @@ void log_vwrite(int logt, const char *fmt, va_list ap) {
         if (o.logfd[fileidx]) {
           len = alloc_vsprintf(&writebuf, fmt, ap);
           if (writebuf == NULL)
-            fatal(str_37s58_26_led46_1100544084, __func__);
+            fatal("%s: alloc_vsprintf failed.", __func__);
           if (len) {
             if ((logtype & (LOG_SKID|LOG_SKID_NOXLT)) && !skid_noxlate)
               skid_output(writebuf);
 
             rc = fwrite(writebuf, len, 1, o.logfd[fileidx]);
             if (rc != 1) {
-              fatal(str_Faile_85_ing46_961889174, len, logtype, rc);
+              fatal("Failed to write %d bytes of data to (logt==%d) stream. fwrite returned %d.  Quitting.", len, logtype, rc);
             }
             va_end(apcopy);
           }
@@ -1039,7 +1038,7 @@ void log_flush(int logt) {
   }
 
   if (logt & LOG_SKID_NOXLT)
-    fatal(str_You32_47_NOXLT_98289128, __func__);
+    fatal("You are not allowed to %s() with LOG_SKID_NOXLT", __func__);
 
   if (logt < 0 || logt > LOG_FILE_MASK)
     return;
@@ -1077,19 +1076,19 @@ int log_open(int logt, bool append, const char *filename) {
     logt >>= 1;
   }
   if (o.logfd[i])
-    fatal(str_Only3_35_lowed_1938653486, logtypes[i]);
+    fatal("Only one %s output filename allowed", logtypes[i]);
   if (*filename == '-' && *(filename + 1) == '\0') {
     o.logfd[i] = stdout;
-    o.nmap_stdout = fopen(DEVNULL, str_w_1_w_119);
+    o.nmap_stdout = fopen(DEVNULL, "w");
     if (!o.nmap_stdout)
-      pfatal(str_Could_41_iting_2039589606, DEVNULL);
+      pfatal("Could not assign %s to stdout for writing", DEVNULL);
   } else {
     if (append)
-      o.logfd[i] = fopen(filename, str_a_1_a_97);
+      o.logfd[i] = fopen(filename, "a");
     else
-      o.logfd[i] = fopen(filename, str_w_1_w_119);
+      o.logfd[i] = fopen(filename, "w");
     if (!o.logfd[i])
-      pfatal(str_Faile_44_iting_1172901720, logtypes[i],
+      pfatal("Failed to open %s output file %s for writing", logtypes[i],
             filename);
   }
   return 1;
@@ -1109,11 +1108,11 @@ static void output_rangelist_given_ports(int logt, const unsigned short *ports,
     while (end + 1 < numports && ports[end + 1] == ports[end] + 1)
       end++;
     if (start > 0)
-      log_write(logt, str_44_1_44_1664);
+      log_write(logt, ",");
     if (start == end)
-      log_write(logt, str_37hu_3_37hu_1575537, ports[start]);
+      log_write(logt, "%hu", ports[start]);
     else
-      log_write(logt, str_37hu4_7_537hu_1103600163, ports[start], ports[end]);
+      log_write(logt, "%hu-%hu", ports[start], ports[end]);
     start = end + 1;
   }
 }
@@ -1126,19 +1125,19 @@ void output_ports_to_machine_parseable_output(const struct scan_lists *ports) {
   int udpportsscanned = ports->udp_count;
   int sctpportsscanned = ports->sctp_count;
   int protsscanned = ports->prot_count;
-  log_write(LOG_MACHINE, str_3532P_24_37d59_789020809, tcpportsscanned);
+  log_write(LOG_MACHINE, "# Ports scanned: TCP(%d;", tcpportsscanned);
   if (tcpportsscanned)
     output_rangelist_given_ports(LOG_MACHINE, ports->tcp_ports, tcpportsscanned);
-  log_write(LOG_MACHINE, str_4132U_9_37d59_766768131, udpportsscanned);
+  log_write(LOG_MACHINE, ") UDP(%d;", udpportsscanned);
   if (udpportsscanned)
     output_rangelist_given_ports(LOG_MACHINE, ports->udp_ports, udpportsscanned);
-  log_write(LOG_MACHINE, str_4132S_10_37d59_426206528, sctpportsscanned);
+  log_write(LOG_MACHINE, ") SCTP(%d;", sctpportsscanned);
   if (sctpportsscanned)
     output_rangelist_given_ports(LOG_MACHINE, ports->sctp_ports, sctpportsscanned);
-  log_write(LOG_MACHINE, str_4132P_15_37d59_289763497, protsscanned);
+  log_write(LOG_MACHINE, ") PROTOCOLS(%d;", protsscanned);
   if (protsscanned)
     output_rangelist_given_ports(LOG_MACHINE, ports->prots, protsscanned);
-  log_write(LOG_MACHINE, str_4192n_3_4192n_49539288);
+  log_write(LOG_MACHINE, ")\n");
   log_flush_all();
 }
 
@@ -1148,14 +1147,14 @@ static void doscanflags() {
     unsigned char flag;
     const char *name;
   } flags[] = {
-    { TH_FIN, str_FIN_3_FIN_69611 },
-    { TH_SYN, str_SYN_3_SYN_82600 },
-    { TH_RST, str_RST_3_RST_81459 },
-    { TH_PUSH, str_PSH_3_PSH_79525 },
-    { TH_ACK, str_ACK_3_ACK_64617 },
-    { TH_URG, str_URG_3_URG_84298 },
-    { TH_ECE, str_ECE_3_ECE_68455 },
-    { TH_CWR, str_CWR_3_CWR_67166 }
+    { TH_FIN, "FIN" },
+    { TH_SYN, "SYN" },
+    { TH_RST, "RST" },
+    { TH_PUSH, "PSH" },
+    { TH_ACK, "ACK" },
+    { TH_URG, "URG" },
+    { TH_ECE, "ECE" },
+    { TH_CWR, "CWR" }
   };
 
   if (o.scanflags != -1) {
@@ -1165,23 +1164,23 @@ static void doscanflags() {
       if (o.scanflags & flags[i].flag)
         flagstring += flags[i].name;
     }
-    xml_attribute(str_scanf_9_flags_1819038166, str_37s_2_37s_50831, flagstring.c_str());
+    xml_attribute("scanflags", "%s", flagstring.c_str());
   }
 }
 
 /* Simple helper function for output_xml_scaninfo_records */
 static void doscaninfo(const char *type, const char *proto,
                        const unsigned short *ports, int numports) {
-  xml_open_start_tag(str_scani_8_ninfo_889871189);
-  xml_attribute(str_type_4_type_3575610, str_37s_2_37s_50831, type);
-  if (strncmp(proto, str_tcp_3_tcp_114657, 3) == 0) {
+  xml_open_start_tag("scaninfo");
+  xml_attribute("type", "%s", type);
+  if (strncmp(proto, "tcp", 3) == 0) {
     doscanflags();
   }
-  xml_attribute(str_proto_8_tocol_989163880, str_37s_2_37s_50831, proto);
-  xml_attribute(str_numse_11_vices_321770980, str_37d_2_37d_50816, numports);
-  xml_write_raw(str_32ser_12_19234_1030774158);
+  xml_attribute("protocol", "%s", proto);
+  xml_attribute("numservices", "%d", numports);
+  xml_write_raw(" services=\"");
   output_rangelist_given_ports(LOG_XML, ports, numports);
-  xml_write_raw(str_9234_2_9234_1747770);
+  xml_write_raw("\"");
   xml_close_empty_tag();
   xml_newline();
 }
@@ -1196,12 +1195,12 @@ static std::string quote(const char *s) {
     if (isspace(*p))
       space = true;
     if (*p == '"' || *p == '\\')
-      result += str_9292_2_9292_1747954;
+      result += "\\";
     result += *p;
   }
 
   if (space)
-    result = str_9234_2_9234_1747770 + result + str_9234_2_9234_1747770;
+    result = "\"" + result + "\"";
 
   return result;
 }
@@ -1214,7 +1213,7 @@ std::string join_quoted(const char * const strings[], unsigned int n) {
 
   for (i = 0; i < n; i++) {
     if (i > 0)
-      result += str_32_1_32_1631;
+      result += " ";
     result += quote(strings[i]);
   }
 
@@ -1226,31 +1225,31 @@ std::string join_quoted(const char * const strings[], unsigned int n) {
    requested and the ports which it will scan for */
 void output_xml_scaninfo_records(const struct scan_lists *scanlist) {
   if (o.synscan)
-    doscaninfo(str_syn_3_syn_114376, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("syn", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.ackscan)
-    doscaninfo(str_ack_3_ack_96393, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("ack", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.bouncescan)
-    doscaninfo(str_bounc_6_ounce_1383205240, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("bounce", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.connectscan)
-    doscaninfo(str_conne_7_nnect_951351530, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("connect", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.nullscan)
-    doscaninfo(str_null_4_null_3392903, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("null", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.xmasscan)
-    doscaninfo(str_xmas_4_xmas_3682791, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("xmas", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.windowscan)
-    doscaninfo(str_windo_6_indow_787751952, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("window", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.maimonscan)
-    doscaninfo(str_maimo_6_aimon_1081571945, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("maimon", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.finscan)
-    doscaninfo(str_fin_3_fin_101387, str_tcp_3_tcp_114657, scanlist->tcp_ports, scanlist->tcp_count);
+    doscaninfo("fin", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.udpscan)
-    doscaninfo(str_udp_3_udp_115649, str_udp_3_udp_115649, scanlist->udp_ports, scanlist->udp_count);
+    doscaninfo("udp", "udp", scanlist->udp_ports, scanlist->udp_count);
   if (o.sctpinitscan)
-    doscaninfo(str_sctpi_8_pinit_344070180, str_sctp_4_sctp_3524812, scanlist->sctp_ports, scanlist->sctp_count);
+    doscaninfo("sctpinit", "sctp", scanlist->sctp_ports, scanlist->sctp_count);
   if (o.sctpcookieechoscan)
-    doscaninfo(str_sctpc_14_eecho_172630955, str_sctp_4_sctp_3524812, scanlist->sctp_ports, scanlist->sctp_count);
+    doscaninfo("sctpcookieecho", "sctp", scanlist->sctp_ports, scanlist->sctp_count);
   if (o.ipprotscan)
-    doscaninfo(str_ippro_7_proto_2012011809, str_ip_2_ip_3367, scanlist->prots, scanlist->prot_count);
+    doscaninfo("ipproto", "ip", scanlist->prots, scanlist->prot_count);
   log_flush_all();
 }
 
@@ -1261,13 +1260,13 @@ static void print_MAC_XML_Info(const Target *currenths) {
 
   if (mac) {
     const char *macvendor = MACPrefix2Corp(mac);
-    Snprintf(macascii, sizeof(macascii), str_3702X_29_3702X_877469763,
+    Snprintf(macascii, sizeof(macascii), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    xml_open_start_tag(str_addre_7_dress_1147692044);
-    xml_attribute(str_addr_4_addr_2989041, str_37s_2_37s_50831, macascii);
-    xml_attribute(str_addrt_8_rtype_1218262357, str_mac_3_mac_107855);
+    xml_open_start_tag("address");
+    xml_attribute("addr", "%s", macascii);
+    xml_attribute("addrtype", "mac");
     if (macvendor)
-      xml_attribute(str_vendo_6_endor_820075192, str_37s_2_37s_50831, macvendor);
+      xml_attribute("vendor", "%s", macvendor);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -1277,34 +1276,34 @@ static void print_MAC_XML_Info(const Target *currenths) {
    into the XML log */
 static void write_xml_initial_hostinfo(const Target *currenths,
                                        const char *status) {
-  xml_open_start_tag(str_statu_6_tatus_892481550);
-  xml_attribute(str_state_5_state_109757585, str_37s_2_37s_50831, status);
-  xml_attribute(str_reaso_6_eason_934964668, str_37s_2_37s_50831, reason_str(currenths->reason.reason_id, SINGULAR));
-  xml_attribute(str_reaso_10_95ttl_900484492, str_37d_2_37d_50816, currenths->reason.ttl);
+  xml_open_start_tag("status");
+  xml_attribute("state", "%s", status);
+  xml_attribute("reason", "%s", reason_str(currenths->reason.reason_id, SINGULAR));
+  xml_attribute("reason_ttl", "%d", currenths->reason.ttl);
   xml_close_empty_tag();
   xml_newline();
-  xml_open_start_tag(str_addre_7_dress_1147692044);
-  xml_attribute(str_addr_4_addr_2989041, str_37s_2_37s_50831, currenths->targetipstr());
-  xml_attribute(str_addrt_8_rtype_1218262357, str_37s_2_37s_50831, (o.af() == AF_INET) ? str_ipv4_4_ipv4_3239397 : str_ipv6_4_ipv6_3239399);
+  xml_open_start_tag("address");
+  xml_attribute("addr", "%s", currenths->targetipstr());
+  xml_attribute("addrtype", "%s", (o.af() == AF_INET) ? "ipv4" : "ipv6");
   xml_close_empty_tag();
   xml_newline();
   print_MAC_XML_Info(currenths);
   /* Output a hostnames element whenever we have a name to write or the target
      is up. */
-  if (currenths->TargetName() != NULL || *currenths->HostName() || strcmp(status, str_up_2_up_3739) == 0) {
-    xml_start_tag(str_hostn_9_names_703976800);
+  if (currenths->TargetName() != NULL || *currenths->HostName() || strcmp(status, "up") == 0) {
+    xml_start_tag("hostnames");
     xml_newline();
     if (currenths->TargetName() != NULL) {
-      xml_open_start_tag(str_hostn_8_tname_299803597);
-      xml_attribute(str_name_4_name_3373707, str_37s_2_37s_50831, currenths->TargetName());
-      xml_attribute(str_type_4_type_3575610, str_user_4_user_3599307);
+      xml_open_start_tag("hostname");
+      xml_attribute("name", "%s", currenths->TargetName());
+      xml_attribute("type", "user");
       xml_close_empty_tag();
       xml_newline();
     }
     if (*currenths->HostName()) {
-      xml_open_start_tag(str_hostn_8_tname_299803597);
-      xml_attribute(str_name_4_name_3373707, str_37s_2_37s_50831, currenths->HostName());
-      xml_attribute(str_type_4_type_3575610, str_PTR_3_PTR_79566);
+      xml_open_start_tag("hostname");
+      xml_attribute("name", "%s", currenths->HostName());
+      xml_attribute("type", "PTR");
       xml_close_empty_tag();
       xml_newline();
     }
@@ -1315,22 +1314,22 @@ static void write_xml_initial_hostinfo(const Target *currenths,
 }
 
 void write_xml_hosthint(const Target *currenths) {
-  xml_start_tag(str_hosth_8_thint_299974609);
-  write_xml_initial_hostinfo(currenths, (currenths->flags & HOST_UP) ? str_up_2_up_3739 : str_down_4_down_3089570);
+  xml_start_tag("hosthint");
+  write_xml_initial_hostinfo(currenths, (currenths->flags & HOST_UP) ? "up" : "down");
   xml_end_tag();
   xml_newline();
   log_flush_all();
 }
 
 static void write_xml_osclass(const OS_Classification *osclass, double accuracy) {
-  xml_open_start_tag(str_oscla_7_class_1179211244);
-  xml_attribute(str_type_4_type_3575610, str_37s_2_37s_50831, osclass->Device_Type);
-  xml_attribute(str_vendo_6_endor_820075192, str_37s_2_37s_50831, osclass->OS_Vendor);
-  xml_attribute(str_osfam_8_amily_2119733688, str_37s_2_37s_50831, osclass->OS_Family);
+  xml_open_start_tag("osclass");
+  xml_attribute("type", "%s", osclass->Device_Type);
+  xml_attribute("vendor", "%s", osclass->OS_Vendor);
+  xml_attribute("osfamily", "%s", osclass->OS_Family);
   // Because the OS_Generation field is optional.
   if (osclass->OS_Generation)
-    xml_attribute(str_osgen_5_osgen_106039020, str_37s_2_37s_50831, osclass->OS_Generation);
-  xml_attribute(str_accur_8_uracy_2131707655, str_37d_2_37d_50816, (int) (accuracy * 100));
+    xml_attribute("osgen", "%s", osclass->OS_Generation);
+  xml_attribute("accuracy", "%d", (int) (accuracy * 100));
   if (osclass->cpe.empty()) {
     xml_close_empty_tag();
   } else {
@@ -1338,8 +1337,8 @@ static void write_xml_osclass(const OS_Classification *osclass, double accuracy)
 
     xml_close_start_tag();
     for (i = 0; i < osclass->cpe.size(); i++) {
-      xml_start_tag(str_cpe_3_cpe_98712);
-      xml_write_escaped(str_37s_2_37s_50831, osclass->cpe[i]);
+      xml_start_tag("cpe");
+      xml_write_escaped("%s", osclass->cpe[i]);
       xml_end_tag();
     }
     xml_end_tag();
@@ -1348,10 +1347,10 @@ static void write_xml_osclass(const OS_Classification *osclass, double accuracy)
 }
 
 static void write_xml_osmatch(const FingerMatch *match, double accuracy) {
-  xml_open_start_tag(str_osmat_7_match_1170285983);
-  xml_attribute(str_name_4_name_3373707, str_37s_2_37s_50831, match->OS_name);
-  xml_attribute(str_accur_8_uracy_2131707655, str_37d_2_37d_50816, (int) (accuracy * 100));
-  xml_attribute(str_line_4_line_3321844, str_37d_2_37d_50816, match->line);
+  xml_open_start_tag("osmatch");
+  xml_attribute("name", "%s", match->OS_name);
+  xml_attribute("accuracy", "%d", (int) (accuracy * 100));
+  xml_attribute("line", "%d", match->line);
   /* When o.deprecated_xml_osclass is true, we don't write osclass elements as
      children of osmatch but rather as unrelated siblings. */
   if (match->OS_class.empty() || o.deprecated_xml_osclass) {
@@ -1384,7 +1383,7 @@ static char *num_to_string_sigdigits(double d, int digits) {
     d = d * pow(10.0, shift);
   }
 
-  n = Snprintf(buf, sizeof(buf), str_37464_4_4642f_357665790, MAX(0, -shift), d);
+  n = Snprintf(buf, sizeof(buf), "%.*f", MAX(0, -shift), d);
   assert(n > 0 && n < (int) sizeof(buf));
 
   return buf;
@@ -1395,32 +1394,32 @@ static char *num_to_string_sigdigits(double d, int digits) {
 void write_host_header(const Target *currenths) {
   if ((currenths->flags & HOST_UP) || o.verbose || o.always_resolve) {
     if (currenths->flags & HOST_UP) {
-      log_write(LOG_PLAIN, str_Nmap3_25_7s92n_921517650, currenths->NameIP());
+      log_write(LOG_PLAIN, "Nmap scan report for %s\n", currenths->NameIP());
     } else if (currenths->flags & HOST_DOWN) {
-      log_write(LOG_PLAIN, str_Nmap3_34_2down_1062848989, currenths->NameIP());
+      log_write(LOG_PLAIN, "Nmap scan report for %s [host down", currenths->NameIP());
       if (o.reason)
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, target_reason_str(currenths));
-      log_write(LOG_PLAIN, str_9392n_3_9392n_54216475);
+        log_write(LOG_PLAIN, ", %s", target_reason_str(currenths));
+      log_write(LOG_PLAIN, "]\n");
     }
   }
   write_host_status(currenths);
   if (currenths->TargetName() != NULL
       && !currenths->unscanned_addrs.empty()) {
 
-    log_write(LOG_PLAIN, str_Other_37_d4158_2108139470,
+    log_write(LOG_PLAIN, "Other addresses for %s (not scanned):",
       currenths->TargetName());
     for (std::list<struct sockaddr_storage>::const_iterator it = currenths->unscanned_addrs.begin(), end = currenths->unscanned_addrs.end();
         it != end; it++) {
       struct sockaddr_storage ss = *it;
-      log_write(LOG_PLAIN, str_3237s_3_3237s_48639952, inet_ntop_ez(&ss, sizeof(ss)));
+      log_write(LOG_PLAIN, " %s", inet_ntop_ez(&ss, sizeof(ss)));
     }
-    log_write(LOG_PLAIN, str_92n_2_92n_56437);
+    log_write(LOG_PLAIN, "\n");
   }
   /* Print reverse DNS if it differs. */
   if (currenths->TargetName() != NULL
       && currenths->HostName() != NULL && currenths->HostName()[0] != '\0'
       && strcmp(currenths->TargetName(), currenths->HostName()) != 0) {
-    log_write(LOG_PLAIN, str_rDNS3_24_7s92n_367392491,
+    log_write(LOG_PLAIN, "rDNS record for %s: %s\n",
       currenths->targetipstr(), currenths->HostName());
   }
 }
@@ -1430,52 +1429,52 @@ void write_host_header(const Target *currenths) {
    machine log. */
 void write_host_status(const Target *currenths) {
   if (o.listscan) {
-    /* write str_unkno_7_known_284840886 to machine and xml */
-    log_write(LOG_MACHINE, str_Host5_32_wn92n_520801426,
+    /* write "unknown" to machine and xml */
+    log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Unknown\n",
               currenths->targetipstr(), currenths->HostName());
-    write_xml_initial_hostinfo(currenths, str_unkno_7_known_284840886);
+    write_xml_initial_hostinfo(currenths, "unknown");
   } else if (currenths->weird_responses) {
     /* SMURF ADDRESS */
-    /* Write xml str_down_4_down_3089570 or str_up_2_up_3739 based on flags and the smurf info */
+    /* Write xml "down" or "up" based on flags and the smurf info */
     write_xml_initial_hostinfo(currenths,
                                (currenths->
-                                flags & HOST_UP) ? str_up_2_up_3739 : str_down_4_down_3089570);
-    xml_open_start_tag(str_smurf_5_smurf_109568207);
-    xml_attribute(str_respo_9_onses_1960086446, str_37d_2_37d_50816, currenths->weird_responses);
+                                flags & HOST_UP) ? "up" : "down");
+    xml_open_start_tag("smurf");
+    xml_attribute("responses", "%d", currenths->weird_responses);
     xml_close_empty_tag();
     xml_newline();
-    log_write(LOG_MACHINE, str_Host5_45_4192n_1393366914,
+    log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Smurf (%d responses)\n",
               currenths->targetipstr(), currenths->HostName(),
               currenths->weird_responses);
 
     if (o.noportscan) {
-      log_write(LOG_PLAIN, str_Host3_74_7s92n_1793396330,
+      log_write(LOG_PLAIN, "Host seems to be a subnet broadcast address (returned %d extra pings).%s\n",
                 currenths->weird_responses,
-                (currenths->flags & HOST_UP) ? str_32Not_38_ded46_702511906 : "");
+                (currenths->flags & HOST_UP) ? " Note -- the actual IP also responded." : "");
     } else {
-      log_write(LOG_PLAIN, str_Host3_76_4692n_1609106887,
+      log_write(LOG_PLAIN, "Host seems to be a subnet broadcast address (returned %d extra pings). %s.\n",
                 currenths->weird_responses,
-                (currenths->flags & HOST_UP) ? str_32Sti_55_n32IP_1689631946 : str_Skipp_13_2host_757462872);
+                (currenths->flags & HOST_UP) ? " Still scanning it due to ping response from its own IP" : "Skipping host");
     }
   } else {
     /* Ping scan / port scan. */
 
-    write_xml_initial_hostinfo(currenths, (currenths->flags & HOST_UP) ? str_up_2_up_3739 : str_down_4_down_3089570);
+    write_xml_initial_hostinfo(currenths, (currenths->flags & HOST_UP) ? "up" : "down");
     if (currenths->flags & HOST_UP) {
-      log_write(LOG_PLAIN, str_Host3_10_s32up_1703741003);
+      log_write(LOG_PLAIN, "Host is up");
       if (o.reason)
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, target_reason_str(currenths));
+        log_write(LOG_PLAIN, ", %s", target_reason_str(currenths));
       if (o.reason && currenths->reason.ttl)
-        log_write(LOG_PLAIN, str_32ttl_7_3237d_1703671988, currenths->reason.ttl);
+        log_write(LOG_PLAIN, " ttl %d", currenths->reason.ttl);
       if (currenths->to.srtt != -1)
-        log_write(LOG_PLAIN, str_32403_14_ncy41_106022845,
+        log_write(LOG_PLAIN, " (%ss latency)",
                   num_to_string_sigdigits(currenths->to.srtt / 1000000.0, 2));
-      log_write(LOG_PLAIN, str_4692n_3_4692n_49688243);
+      log_write(LOG_PLAIN, ".\n");
 
-      log_write(LOG_MACHINE, str_Host5_27_Up92n_486129303,
+      log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Up\n",
                 currenths->targetipstr(), currenths->HostName());
     } else if (currenths->flags & HOST_DOWN) {
-      log_write(LOG_MACHINE, str_Host5_29_wn92n_1141498864,
+      log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Down\n",
                 currenths->targetipstr(), currenths->HostName());
     }
   }
@@ -1516,9 +1515,9 @@ static void printosclassificationoutput(const struct
   int overflow = 0;             /* Whether we have too many devices to list */
   const char *types[MAX_OS_CLASSMEMBERS];
   const char *cpes[MAX_OS_CLASSMEMBERS];
-  char fullfamily[MAX_OS_CLASSMEMBERS][128];    // str_91ven_20_ily93_798039666
+  char fullfamily[MAX_OS_CLASSMEMBERS][128];    // "[vendor] [os family]"
   double familyaccuracy[MAX_OS_CLASSMEMBERS];   // highest accuracy for this fullfamily
-  char familygenerations[MAX_OS_CLASSMEMBERS][96];      // example: str_446X1_11_4646X_266953665
+  char familygenerations[MAX_OS_CLASSMEMBERS][96];      // example: "4.X|5.X|6.X"
   int numtypes = 0, numcpes = 0, numfamilies = 0;
   char tmpbuf[1024];
 
@@ -1556,7 +1555,7 @@ static void printosclassificationoutput(const struct
       if (strcmp(OSR->OSC[classno]->OS_Vendor, OSR->OSC[classno]->OS_Family) == 0)
         Strncpy(tmpbuf, OSR->OSC[classno]->OS_Family, sizeof(tmpbuf));
       else
-        Snprintf(tmpbuf, sizeof(tmpbuf), str_37s32_5_3237s_696898911, OSR->OSC[classno]->OS_Vendor, OSR->OSC[classno]->OS_Family);
+        Snprintf(tmpbuf, sizeof(tmpbuf), "%s %s", OSR->OSC[classno]->OS_Vendor, OSR->OSC[classno]->OS_Family);
 
 
       // Let's see if it is already in the array
@@ -1570,9 +1569,9 @@ static void printosclassificationoutput(const struct
             // We add it, preceded by | if something is already there
             if (flen + 2 + strlen(OSR->OSC[classno]->OS_Generation) >=
                 sizeof(familygenerations[familyno]))
-              fatal(str_buffe_36_tions_2138512445);
+              fatal("buffer 0verfl0w of familygenerations");
             if (*familygenerations[familyno])
-              strcat(familygenerations[familyno], str_124_1_124_48691);
+              strcat(familygenerations[familyno], "|");
             strncat(familygenerations[familyno],
                     OSR->OSC[classno]->OS_Generation,
                     sizeof(familygenerations[familyno]) - flen - 1);
@@ -1598,27 +1597,27 @@ static void printosclassificationoutput(const struct
     }
 
     if (!overflow && numfamilies >= 1) {
-      log_write(LOG_PLAIN, str_Devic_13_e5832_2111207633);
+      log_write(LOG_PLAIN, "Device type: ");
       for (classno = 0; classno < numtypes; classno++)
-        log_write(LOG_PLAIN, str_37s37_4_7s37s_1514357152, types[classno], (classno < numtypes - 1) ? str_124_1_124_48691 : "");
-      log_write(LOG_PLAIN, str_92nRu_13_s5832_446442361, OSR->OSC_num_perfect_matches == 0 ? str_3240J_16_ING41_909320206 : "");
+        log_write(LOG_PLAIN, "%s%s", types[classno], (classno < numtypes - 1) ? "|" : "");
+      log_write(LOG_PLAIN, "\nRunning%s: ", OSR->OSC_num_perfect_matches == 0 ? " (JUST GUESSING)" : "");
       for (familyno = 0; familyno < numfamilies; familyno++) {
         if (familyno > 0)
-          log_write(LOG_PLAIN, str_4432_2_4432_1600735);
-        log_write(LOG_PLAIN, str_37s_2_37s_50831, fullfamily[familyno]);
+          log_write(LOG_PLAIN, ", ");
+        log_write(LOG_PLAIN, "%s", fullfamily[familyno]);
         if (*familygenerations[familyno])
-          log_write(LOG_PLAIN, str_3237s_3_3237s_48639952, familygenerations[familyno]);
+          log_write(LOG_PLAIN, " %s", familygenerations[familyno]);
         if (familyno >= OSR->OSC_num_perfect_matches)
-          log_write(LOG_PLAIN, str_32403_8_73741_2104319606,
+          log_write(LOG_PLAIN, " (%.f%%)",
                     floor(familyaccuracy[familyno] * 100));
       }
-      log_write(LOG_PLAIN, str_92n_2_92n_56437);
+      log_write(LOG_PLAIN, "\n");
 
       if (numcpes > 0) {
-        log_write(LOG_PLAIN, str_OS32C_7_CPE58_1378187448);
+        log_write(LOG_PLAIN, "OS CPE:");
         for (cpeno = 0; cpeno < numcpes; cpeno++)
-          log_write(LOG_PLAIN, str_3237s_3_3237s_48639952, cpes[cpeno]);
-        log_write(LOG_PLAIN, str_92n_2_92n_56437);
+          log_write(LOG_PLAIN, " %s", cpes[cpeno]);
+        log_write(LOG_PLAIN, "\n");
       }
     }
   }
@@ -1637,10 +1636,10 @@ void printmacinfo(const Target *currenths) {
 
   if (mac) {
     const char *macvendor = MACPrefix2Corp(mac);
-    Snprintf(macascii, sizeof(macascii), str_3702X_29_3702X_877469763,
+    Snprintf(macascii, sizeof(macascii), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    log_write(LOG_PLAIN, str_MAC32_22_4192n_164101301, macascii,
-              macvendor ? macvendor : str_Unkno_7_known_1379812394);
+    log_write(LOG_PLAIN, "MAC Address: %s (%s)\n", macascii,
+              macvendor ? macvendor : "Unknown");
   }
 }
 
@@ -1673,7 +1672,7 @@ static std::string run_length_encode(const std::string &s) {
     if (reps < 3)
       result << std::string(p, q);
     else
-      result << std::string(p, 2) << str_123_1_123_48690 << reps << str_125_1_125_48692;
+      result << std::string(p, 2) << "{" << reps << "}";
     p = q;
   }
   if (*p != '\0')
@@ -1683,7 +1682,7 @@ static std::string run_length_encode(const std::string &s) {
 }
 
 static std::string wrap(const std::string &s) {
-  const static char *prefix = str_OS58_3_OS58_2434951;
+  const static char *prefix = "OS:";
   std::string t, buf;
   int i, len, prefixlen;
   size_t p;
@@ -1691,7 +1690,7 @@ static std::string wrap(const std::string &s) {
   t = s;
   /* Remove newlines. */
   p = 0;
-  while ((p = t.find(str_92n_2_92n_56437, p)) != std::string::npos)
+  while ((p = t.find("\n", p)) != std::string::npos)
     t.erase(p, 1);
 
   len = t.size();
@@ -1700,7 +1699,7 @@ static std::string wrap(const std::string &s) {
   for (i = 0; i < len; i += FP_RESULT_WRAP_LINE_LEN - prefixlen) {
     buf.append(prefix);
     buf.append(t, i, FP_RESULT_WRAP_LINE_LEN - prefixlen);
-    buf.append(str_92n_2_92n_56437);
+    buf.append("\n");
   }
 
   return buf;
@@ -1752,7 +1751,7 @@ static std::string get_scrubbed_buffer(const FPResponse *resp) {
       result.width(2);
       result << (unsigned int) resp->buf[i];
     } else {
-      result << str_XX_2_XX_2816;
+      result << "XX";
     }
   }
 
@@ -1773,11 +1772,11 @@ const char *FingerPrintResultsIPv6::merge_fpr(const Target *currenths,
   unsigned int i;
 
   /* Write the SCAN line. */
-  WriteSInfo(str, sizeof(str), isGoodFP, str_6_1_6_54, currenths->TargetSockAddr(),
+  WriteSInfo(str, sizeof(str), isGoodFP, "6", currenths->TargetSockAddr(),
     currenths->distance, currenths->distance_calculation_method,
     currenths->MACAddress(), this->osscan_opentcpport,
     this->osscan_closedtcpport, this->osscan_closedudpport);
-  result << str << str_92n_2_92n_56437;
+  result << str << "\n";
 
   FPR = (FingerPrintResultsIPv6 *) currenths->FPR;
   assert(FPR->begin_time.tv_sec != 0);
@@ -1791,21 +1790,21 @@ const char *FingerPrintResultsIPv6::merge_fpr(const Target *currenths,
     scrubbed = get_scrubbed_buffer(resp);
     if (wrapit)
       scrubbed = run_length_encode(scrubbed);
-    result << resp->probe_id << str_40P61_3_40P61_49531663 << scrubbed;
+    result << resp->probe_id << "(P=" << scrubbed;
     assert(resp->senttime.tv_sec != 0);
-    result << str_37ST6_4_7ST61_1513435456 << TIMEVAL_FSEC_SUBTRACT(resp->senttime, FPR->begin_time);
+    result << "%ST=" << TIMEVAL_FSEC_SUBTRACT(resp->senttime, FPR->begin_time);
     assert(resp->rcvdtime.tv_sec != 0);
-    result << str_37RT6_4_7RT61_1513405665 << TIMEVAL_FSEC_SUBTRACT(resp->rcvdtime, FPR->begin_time);
-    result << str_4192n_3_4192n_49539288;
+    result << "%RT=" << TIMEVAL_FSEC_SUBTRACT(resp->rcvdtime, FPR->begin_time);
+    result << ")\n";
   }
 
-  result << str_EXTRA_6_TRA40_587307412;
-  result << str_FL61_3_FL61_2160129;
+  result << "EXTRA(";
+  result << "FL=";
   result.fill('0');
   result << std::hex;
   result.width(5);
   result << FPR->flow_label;
-  result << str_4192n_3_4192n_49539288;
+  result << ")\n";
 
   output = result.str();
   if (wrapit) {
@@ -1821,13 +1820,13 @@ static void write_merged_fpr(const FingerPrintResults *FPR,
                              const Target *currenths,
                              bool isGoodFP, bool wrapit) {
   log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-            str_TCP47_25_7s92n_803582942,
+            "TCP/IP fingerprint:\n%s\n",
             FPR->merge_fpr(currenths, isGoodFP, wrapit));
 
   /* Added code here to print fingerprint to XML file any time it would be
      printed to any other output format  */
-  xml_open_start_tag(str_osfin_13_print_1919286144);
-  xml_attribute(str_finge_11_print_1375934236, str_37s_2_37s_50831, FPR->merge_fpr(currenths, isGoodFP, wrapit));
+  xml_open_start_tag("osfingerprint");
+  xml_attribute("fingerprint", "%s", FPR->merge_fpr(currenths, isGoodFP, wrapit));
   xml_close_empty_tag();
   xml_newline();
 }
@@ -1848,28 +1847,28 @@ void printosscanoutput(const Target *currenths) {
     return;
   FPR = currenths->FPR;
 
-  xml_start_tag(str_os_2_os_3556);
+  xml_start_tag("os");
   if (FPR->osscan_opentcpport > 0) {
-    xml_open_start_tag(str_portu_8_tused_729373630);
-    xml_attribute(str_state_5_state_109757585, str_open_4_open_3417674);
-    xml_attribute(str_proto_5_proto_106940904, str_tcp_3_tcp_114657);
-    xml_attribute(str_porti_6_ortid_982480548, str_37d_2_37d_50816, FPR->osscan_opentcpport);
+    xml_open_start_tag("portused");
+    xml_attribute("state", "open");
+    xml_attribute("proto", "tcp");
+    xml_attribute("portid", "%d", FPR->osscan_opentcpport);
     xml_close_empty_tag();
     xml_newline();
   }
   if (FPR->osscan_closedtcpport > 0) {
-    xml_open_start_tag(str_portu_8_tused_729373630);
-    xml_attribute(str_state_5_state_109757585, str_close_6_losed_1357520532);
-    xml_attribute(str_proto_5_proto_106940904, str_tcp_3_tcp_114657);
-    xml_attribute(str_porti_6_ortid_982480548, str_37d_2_37d_50816, FPR->osscan_closedtcpport);
+    xml_open_start_tag("portused");
+    xml_attribute("state", "closed");
+    xml_attribute("proto", "tcp");
+    xml_attribute("portid", "%d", FPR->osscan_closedtcpport);
     xml_close_empty_tag();
     xml_newline();
   }
   if (FPR->osscan_closedudpport > 0) {
-    xml_open_start_tag(str_portu_8_tused_729373630);
-    xml_attribute(str_state_5_state_109757585, str_close_6_losed_1357520532);
-    xml_attribute(str_proto_5_proto_106940904, str_udp_3_udp_115649);
-    xml_attribute(str_porti_6_ortid_982480548, str_37d_2_37d_50816, FPR->osscan_closedudpport);
+    xml_open_start_tag("portused");
+    xml_attribute("state", "closed");
+    xml_attribute("proto", "udp");
+    xml_attribute("portid", "%d", FPR->osscan_closedudpport);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -1877,7 +1876,7 @@ void printosscanoutput(const Target *currenths) {
   if (osscan_flag == OS_PERF_UNREL &&
       !(FPR->overall_results == OSSCAN_TOOMANYMATCHES ||
         (FPR->num_perfect_matches > 8 && !o.debugging)))
-    log_write(LOG_PLAIN, str_Warni_103_rt92n_1345521281);
+    log_write(LOG_PLAIN, "Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port\n");
 
   // If the FP can't be submitted anyway, might as well make a guess.
   const char *reason = FPR->OmitSubmissionFP();
@@ -1891,17 +1890,17 @@ void printosscanoutput(const Target *currenths) {
       for (i = 0; i < FPR->num_perfect_matches; i++)
         write_xml_osmatch(FPR->matches[i], FPR->accuracy[i]);
 
-      log_write(LOG_MACHINE, str_92tOS_8_3237s_1103078030, FPR->matches[0]->OS_name);
+      log_write(LOG_MACHINE, "\tOS: %s", FPR->matches[0]->OS_name);
       for (i = 1; i < FPR->num_perfect_matches; i++)
-        log_write(LOG_MACHINE, str_12437_3_2437s_1450604412, FPR->matches[i]->OS_name);
+        log_write(LOG_MACHINE, "|%s", FPR->matches[i]->OS_name);
 
       unsigned short numprints = FPR->matches[0]->numprints;
-      log_write(LOG_PLAIN, str_OS32d_14_3237s_1203891342, FPR->matches[0]->OS_name);
+      log_write(LOG_PLAIN, "OS details: %s", FPR->matches[0]->OS_name);
       for (i = 1; i < FPR->num_perfect_matches; i++) {
         numprints = MIN(numprints, FPR->matches[i]->numprints);
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, FPR->matches[i]->OS_name);
+        log_write(LOG_PLAIN, ", %s", FPR->matches[i]->OS_name);
       }
-      log_write(LOG_PLAIN, str_92n_2_92n_56437);
+      log_write(LOG_PLAIN, "\n");
 
       /* Suggest submission of an already-matching IPv6 fingerprint with
        * decreasing probability as numprints increases, and never if the group
@@ -1909,35 +1908,35 @@ void printosscanoutput(const Target *currenths) {
       bool suggest_submission = currenths->af() == AF_INET6 && reason == NULL && rand() % 5 >= numprints;
       if (suggest_submission)
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-            str_Nmap3_98_4792n_1862627678);
+            "Nmap needs more fingerprint submissions of this type. Please submit via https://nmap.org/submit/\n");
       if (suggest_submission || o.debugging || o.verbose > 1)
         write_merged_fpr(FPR, currenths, reason == NULL, true);
     } else {
       /* No perfect matches. */
       if ((o.verbose > 1 || o.debugging) && reason)
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                  str_OS32f_38_7s92n_1138680940, reason);
+                  "OS fingerprint not ideal because: %s\n", reason);
 
       for (i = 0; i < 10 && i < FPR->num_matches && FPR->accuracy[i] > FPR->accuracy[0] - 0.10; i++)
         write_xml_osmatch(FPR->matches[i], FPR->accuracy[i]);
 
       if ((o.osscan_guess || reason) && FPR->num_matches > 0) {
         /* Print the best guesses available */
-        log_write(LOG_PLAIN, str_Aggre_33_73741_847124572,
+        log_write(LOG_PLAIN, "Aggressive OS guesses: %s (%.f%%)",
                   FPR->matches[0]->OS_name, floor(FPR->accuracy[0] * 100));
         for (i = 1; i < 10 && FPR->num_matches > i && FPR->accuracy[i] > FPR->accuracy[0] - 0.10; i++)
-          log_write(LOG_PLAIN, str_44323_12_73741_2023186886, FPR->matches[i]->OS_name, floor(FPR->accuracy[i] * 100));
+          log_write(LOG_PLAIN, ", %s (%.f%%)", FPR->matches[i]->OS_name, floor(FPR->accuracy[i] * 100));
 
-        log_write(LOG_PLAIN, str_92n_2_92n_56437);
+        log_write(LOG_PLAIN, "\n");
       }
 
       if (!reason) {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                  str_No32e_101_4692n_834467284);
+                  "No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).\n");
         write_merged_fpr(FPR, currenths, true, true);
       } else {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                  str_No32e_59_4692n_1246849773);
+                  "No exact OS matches for host (test conditions non-ideal).\n");
         if (o.verbose > 1 || o.debugging)
           write_merged_fpr(FPR, currenths, false, false);
       }
@@ -1946,13 +1945,13 @@ void printosscanoutput(const Target *currenths) {
     /* No matches at all. */
     if (!reason) {
       log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                str_No32O_95_4692n_542197518);
+                "No OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).\n");
       write_merged_fpr(FPR, currenths, true, true);
     } else {
       log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                str_OS32f_38_7s92n_1138680940, reason);
+                "OS fingerprint not ideal because: %s\n", reason);
       log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                str_No32O_24_st92n_525228972);
+                "No OS matches for host\n");
       if (o.debugging || o.verbose > 1)
         write_merged_fpr(FPR, currenths, false, false);
     }
@@ -1960,7 +1959,7 @@ void printosscanoutput(const Target *currenths) {
              || (FPR->num_perfect_matches > 8 && !o.debugging)) {
     /* Too many perfect matches. */
     log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-              str_Too32_67_ls92n_1280793254);
+              "Too many fingerprints match this host to give specific OS details\n");
     if (o.debugging || o.verbose > 1)
       write_merged_fpr(FPR, currenths, false, false);
   } else {
@@ -1980,26 +1979,26 @@ void printosscanoutput(const Target *currenths) {
     uptime = difftime(tv.tv_sec, currenths->seq.lastboot);
     if (o.verbose) {
       if (err)
-        log_write(LOG_PLAIN, str_Uptim_25_ys92n_1724342356,
+        log_write(LOG_PLAIN, "Uptime guess: %.3f days\n",
                 uptime / 86400);
       else
-        log_write(LOG_PLAIN, str_Uptim_36_4192n_48826662,
+        log_write(LOG_PLAIN, "Uptime guess: %.3f days (since %s)\n",
                 uptime / 86400,
                 tmbuf);
     }
-    xml_open_start_tag(str_uptim_6_ptime_838362136);
-    xml_attribute(str_secon_7_conds_1970096767, str_37460_4_7460f_1512482972, uptime);
+    xml_open_start_tag("uptime");
+    xml_attribute("seconds", "%.0f", uptime);
     if (!err)
-      xml_attribute(str_lastb_8_tboot_1458990456, str_37s_2_37s_50831, tmbuf);
+      xml_attribute("lastboot", "%s", tmbuf);
     xml_close_empty_tag();
     xml_newline();
   }
 
   if (currenths->distance != -1) {
-    log_write(LOG_PLAIN, str_Netwo_28_7s92n_1890723668,
-              currenths->distance, (currenths->distance == 1) ? "" : str_s_1_s_115);
-    xml_open_start_tag(str_dista_8_tance_288459765);
-    xml_attribute(str_value_5_value_111972721, str_37d_2_37d_50816, currenths->distance);
+    log_write(LOG_PLAIN, "Network Distance: %d hop%s\n",
+              currenths->distance, (currenths->distance == 1) ? "" : "s");
+    xml_open_start_tag("distance");
+    xml_attribute("value", "%d", currenths->distance);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -2008,63 +2007,63 @@ void printosscanoutput(const Target *currenths) {
     p = numlst;
     for (i = 0; i < currenths->seq.responses; i++) {
       if (p - numlst > (int) (sizeof(numlst) - 15))
-        fatal(str_STRAN_57_rg92n_1726722643);
+        fatal("STRANGE ERROR #3877 -- please report to fyodor@nmap.org\n");
       if (p != numlst)
         *p++ = ',';
-      sprintf(p, str_37X_2_37X_50804, currenths->seq.seqs[i]);
+      sprintf(p, "%X", currenths->seq.seqs[i]);
       while (*p)
         p++;
     }
 
-    xml_open_start_tag(str_tcpse_11_uence_510183074);
-    xml_attribute(str_index_5_index_100346066, str_37li_3_37li_1575649, (long) currenths->seq.index);
-    xml_attribute(str_diffi_10_culty_1829500859, str_37s_2_37s_50831, seqidx2difficultystr(currenths->seq.index));
-    xml_attribute(str_value_6_alues_823812830, str_37s_2_37s_50831, numlst);
+    xml_open_start_tag("tcpsequence");
+    xml_attribute("index", "%li", (long) currenths->seq.index);
+    xml_attribute("difficulty", "%s", seqidx2difficultystr(currenths->seq.index));
+    xml_attribute("values", "%s", numlst);
     xml_close_empty_tag();
     xml_newline();
     if (o.verbose)
-      log_write(LOG_PLAIN, str_TCP32_45_4192n_415563197, currenths->seq.index, seqidx2difficultystr(currenths->seq.index));
+      log_write(LOG_PLAIN, "TCP Sequence Prediction: Difficulty=%d (%s)\n", currenths->seq.index, seqidx2difficultystr(currenths->seq.index));
 
-    log_write(LOG_MACHINE, str_92tSe_15_3237d_1408496847, currenths->seq.index);
+    log_write(LOG_MACHINE, "\tSeq Index: %d", currenths->seq.index);
   }
 
   if (currenths->seq.responses > 2) {
     p = numlst;
     for (i = 0; i < currenths->seq.responses; i++) {
       if (p - numlst > (int) (sizeof(numlst) - 15))
-        fatal(str_STRAN_57_rg92n_1734482002);
+        fatal("STRANGE ERROR #3876 -- please report to fyodor@nmap.org\n");
       if (p != numlst)
         *p++ = ',';
-      sprintf(p, str_37hX_3_37hX_1575508, currenths->seq.ipids[i]);
+      sprintf(p, "%hX", currenths->seq.ipids[i]);
       while (*p)
         p++;
     }
-    xml_open_start_tag(str_ipids_12_uence_1187626429);
-    xml_attribute(str_class_5_class_94742904, str_37s_2_37s_50831, ipidclass2ascii(currenths->seq.ipid_seqclass));
-    xml_attribute(str_value_6_alues_823812830, str_37s_2_37s_50831, numlst);
+    xml_open_start_tag("ipidsequence");
+    xml_attribute("class", "%s", ipidclass2ascii(currenths->seq.ipid_seqclass));
+    xml_attribute("values", "%s", numlst);
     xml_close_empty_tag();
     xml_newline();
     if (o.verbose)
-      log_write(LOG_PLAIN, str_IP32I_31_7s92n_938311936,
+      log_write(LOG_PLAIN, "IP ID Sequence Generation: %s\n",
                 ipidclass2ascii(currenths->seq.ipid_seqclass));
-    log_write(LOG_MACHINE, str_92tIP_15_3237s_1072092457,
+    log_write(LOG_MACHINE, "\tIP ID Seq: %s",
               ipidclass2ascii(currenths->seq.ipid_seqclass));
 
     p = numlst;
     for (i = 0; i < currenths->seq.responses; i++) {
       if (p - numlst > (int) (sizeof(numlst) - 15))
-        fatal(str_STRAN_57_rg92n_1718963284);
+        fatal("STRANGE ERROR #3878 -- please report to fyodor@nmap.org\n");
       if (p != numlst)
         *p++ = ',';
-      sprintf(p, str_37X_2_37X_50804, currenths->seq.timestamps[i]);
+      sprintf(p, "%X", currenths->seq.timestamps[i]);
       while (*p)
         p++;
     }
 
-    xml_open_start_tag(str_tcpts_13_uence_845827615);
-    xml_attribute(str_class_5_class_94742904, str_37s_2_37s_50831, tsseqclass2ascii(currenths->seq.ts_seqclass));
+    xml_open_start_tag("tcptssequence");
+    xml_attribute("class", "%s", tsseqclass2ascii(currenths->seq.ts_seqclass));
     if (currenths->seq.ts_seqclass != TS_SEQ_UNSUPPORTED) {
-      xml_attribute(str_value_6_alues_823812830, str_37s_2_37s_50831, numlst);
+      xml_attribute("values", "%s", numlst);
     }
     xml_close_empty_tag();
     xml_newline();
@@ -2165,48 +2164,48 @@ void printserviceinfooutput(const Target *currenths) {
   if (!numhostnames && !numostypes && !numdevicetypes && !numcpes)
     return;
 
-  log_write(LOG_PLAIN, str_Servi_13_nfo58_1816764251);
+  log_write(LOG_PLAIN, "Service Info:");
 
-  delim = str_32_1_32_1631;
+  delim = " ";
   if (numhostnames) {
-    log_write(LOG_PLAIN, str_37sHo_12_3237s_1224331701, delim, numhostnames == 1 ? "" : str_s_1_s_115, &hostname_tbl[0][0]);
+    log_write(LOG_PLAIN, "%sHost%s: %s", delim, numhostnames == 1 ? "" : "s", &hostname_tbl[0][0]);
     for (i = 1; i < MAX_SERVICE_INFO_FIELDS; i++) {
       if (hostname_tbl[i][0])
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, &hostname_tbl[i][0]);
+        log_write(LOG_PLAIN, ", %s", &hostname_tbl[i][0]);
     }
-    delim = str_5932_2_5932_1635331;
+    delim = "; ";
   }
 
   if (numostypes) {
-    log_write(LOG_PLAIN, str_37sOS_10_3237s_1110653295, delim, numostypes == 1 ? "" : str_s_1_s_115,
+    log_write(LOG_PLAIN, "%sOS%s: %s", delim, numostypes == 1 ? "" : "s",
               &ostype_tbl[0][0]);
     for (i = 1; i < MAX_SERVICE_INFO_FIELDS; i++) {
       if (ostype_tbl[i][0])
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, &ostype_tbl[i][0]);
+        log_write(LOG_PLAIN, ", %s", &ostype_tbl[i][0]);
     }
-    delim = str_5932_2_5932_1635331;
+    delim = "; ";
   }
 
   if (numdevicetypes) {
-    log_write(LOG_PLAIN, str_37sDe_14_3237s_60155613, delim,
-              numdevicetypes == 1 ? "" : str_s_1_s_115, &devicetype_tbl[0][0]);
+    log_write(LOG_PLAIN, "%sDevice%s: %s", delim,
+              numdevicetypes == 1 ? "" : "s", &devicetype_tbl[0][0]);
     for (i = 1; i < MAX_SERVICE_INFO_FIELDS; i++) {
       if (devicetype_tbl[i][0])
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, &devicetype_tbl[i][0]);
+        log_write(LOG_PLAIN, ", %s", &devicetype_tbl[i][0]);
     }
-    delim = str_5932_2_5932_1635331;
+    delim = "; ";
   }
 
   if (numcpes > 0) {
-    log_write(LOG_PLAIN, str_37sCP_9_3237s_1469228444, delim, &cpe_tbl[0][0]);
+    log_write(LOG_PLAIN, "%sCPE: %s", delim, &cpe_tbl[0][0]);
     for (i = 1; i < MAX_SERVICE_INFO_FIELDS; i++) {
       if (cpe_tbl[i][0])
-        log_write(LOG_PLAIN, str_44323_4_3237s_442906960, &cpe_tbl[i][0]);
+        log_write(LOG_PLAIN, ", %s", &cpe_tbl[i][0]);
     }
-    delim = str_5932_2_5932_1635331;
+    delim = "; ";
   }
 
-  log_write(LOG_PLAIN, str_92n_2_92n_56437);
+  log_write(LOG_PLAIN, "\n");
   log_flush_all();
 }
 
@@ -2217,17 +2216,17 @@ void printscriptresults(const ScriptResults *scriptResults, stype scantype) {
 
   if (scriptResults->size() > 0) {
     if (scantype == SCRIPT_PRE_SCAN) {
-      xml_start_tag(str_presc_9_cript_923681490);
-      log_write(LOG_PLAIN, str_Pre45_26_5892n_309602042);
+      xml_start_tag("prescript");
+      log_write(LOG_PLAIN, "Pre-scan script results:\n");
     } else {
-      xml_start_tag(str_posts_10_cript_1775406741);
-      log_write(LOG_PLAIN, str_Post4_27_5892n_1898651075);
+      xml_start_tag("postscript");
+      log_write(LOG_PLAIN, "Post-scan script results:\n");
     }
     for (iter = scriptResults->begin(); iter != scriptResults->end(); iter++) {
       (*iter)->write_xml();
       script_output = formatScriptOutput((*iter));
       if (script_output != NULL) {
-        log_write(LOG_PLAIN, str_37s92_4_7s92n_1514362758, script_output);
+        log_write(LOG_PLAIN, "%s\n", script_output);
         free(script_output);
       }
     }
@@ -2240,8 +2239,8 @@ void printhostscriptresults(const Target *currenths) {
   char *script_output;
 
   if (currenths->scriptResults.size() > 0) {
-    xml_start_tag(str_hosts_10_cript_203298701);
-    log_write(LOG_PLAIN, str_92nHo_24_5892n_933267202);
+    xml_start_tag("hostscript");
+    log_write(LOG_PLAIN, "\nHost script results:\n");
     for (iter = currenths->scriptResults.begin();
          iter != currenths->scriptResults.end();
          iter++) {
@@ -2249,7 +2248,7 @@ void printhostscriptresults(const Target *currenths) {
 
       script_output = formatScriptOutput((*iter));
       if (script_output != NULL) {
-        log_write(LOG_PLAIN, str_37s92_4_7s92n_1514362758, script_output);
+        log_write(LOG_PLAIN, "%s\n", script_output);
         free(script_output);
       }
     }
@@ -2274,29 +2273,29 @@ static void printtraceroute_normal(const Target *currenths) {
   log_write(LOG_PLAIN, "\n");
   probe = currenths->traceroute_probespec;
   if (probe.type == PS_TCP) {
-    log_write(LOG_PLAIN, str_TRACE_31_4192n_1196774088,
+    log_write(LOG_PLAIN, "TRACEROUTE (using port %d/%s)\n",
               probe.pd.tcp.dport, proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_UDP) {
-    log_write(LOG_PLAIN, str_TRACE_31_4192n_1196774088,
+    log_write(LOG_PLAIN, "TRACEROUTE (using port %d/%s)\n",
               probe.pd.udp.dport, proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_SCTP) {
-    log_write(LOG_PLAIN, str_TRACE_31_4192n_1196774088,
+    log_write(LOG_PLAIN, "TRACEROUTE (using port %d/%s)\n",
               probe.pd.sctp.dport, proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_ICMP || probe.type == PS_ICMPV6 || probe.type == PS_PROTO) {
     const struct nprotoent *proto = nmap_getprotbynum(probe.proto);
-    log_write(LOG_PLAIN, str_TRACE_32_4192n_976595319,
+    log_write(LOG_PLAIN, "TRACEROUTE (using proto %d/%s)\n",
               probe.proto, proto ? proto->p_name : "unknown");
   } else if (probe.type == PS_NONE) {
     /* "Traces" of directly connected targets don't send any packets. */
-    log_write(LOG_PLAIN, str_TRACE_12_TE92n_1667659311);
+    log_write(LOG_PLAIN, "TRACEROUTE\n");
   } else {
-    fatal(str_Unkno_22_37d46_1253299229, probe.type);
+    fatal("Unknown probe type %d.", probe.type);
   }
 
   row = 0;
-  Tbl.addItem(row, HOP_COL, false, str_HOP_3_HOP_71721);
-  Tbl.addItem(row, RTT_COL, false, str_RTT_3_RTT_81490);
-  Tbl.addItem(row, HOST_COL, false, str_ADDRE_7_DRESS_429709356);
+  Tbl.addItem(row, HOP_COL, false, "HOP");
+  Tbl.addItem(row, RTT_COL, false, "RTT");
+  Tbl.addItem(row, HOST_COL, false, "ADDRESS");
   row++;
 
   it = currenths->traceroute_hops.begin();
@@ -2312,14 +2311,14 @@ static void printtraceroute_normal(const Target *currenths) {
     }
 
     if (shared_hop != NULL) {
-      Tbl.addItem(row, HOP_COL, false, str_45_1_45_1665);
+      Tbl.addItem(row, HOP_COL, false, "-");
       if (shared_hop->ttl == 1) {
         Tbl.addItemFormatted(row, RTT_COL, true,
-          str_Hop32_27_3237s_30615772,
+          "Hop 1 is the same as for %s",
           inet_ntop_ez(&shared_hop->tag, sizeof(shared_hop->tag)));
       } else if (shared_hop->ttl > 1) {
         Tbl.addItemFormatted(row, RTT_COL, true,
-          str_Hops3_32_3237s_1118518768, shared_hop->ttl,
+          "Hops 1-%d are the same as for %s", shared_hop->ttl,
           inet_ntop_ez(&shared_hop->tag, sizeof(shared_hop->tag)));
       }
       row++;
@@ -2327,10 +2326,10 @@ static void printtraceroute_normal(const Target *currenths) {
   }
 
   while (it != currenths->traceroute_hops.end()) {
-    Tbl.addItemFormatted(row, HOP_COL, false, str_37d_2_37d_50816, it->ttl);
+    Tbl.addItemFormatted(row, HOP_COL, false, "%d", it->ttl);
     if (it->timedout) {
       if (o.debugging) {
-        Tbl.addItem(row, RTT_COL, false, str_46464_3_64646_1540188678);
+        Tbl.addItem(row, RTT_COL, false, "...");
         it++;
       } else {
         /* The beginning and end of timeout consolidation. */
@@ -2339,9 +2338,9 @@ static void printtraceroute_normal(const Target *currenths) {
         for (; it != currenths->traceroute_hops.end() && it->timedout; it++)
           end_ttl = it->ttl;
         if (begin_ttl == end_ttl)
-          Tbl.addItem(row, RTT_COL, false, str_46464_3_64646_1540188678);
+          Tbl.addItem(row, RTT_COL, false, "...");
         else
-          Tbl.addItemFormatted(row, RTT_COL, false, str_46464_6_3237d_349693573, end_ttl);
+          Tbl.addItemFormatted(row, RTT_COL, false, "... %d", end_ttl);
       }
       row++;
     } else {
@@ -2350,16 +2349,16 @@ static void printtraceroute_normal(const Target *currenths) {
 
       it->display_name(namebuf, sizeof(namebuf));
       if (it->rtt < 0)
-        Tbl.addItem(row, RTT_COL, false, str_4545_2_4545_1601730);
+        Tbl.addItem(row, RTT_COL, false, "--");
       else
-        Tbl.addItemFormatted(row, RTT_COL, false, str_37462_7_f32ms_581608479, it->rtt);
-      Tbl.addItemFormatted(row, HOST_COL, false, str_37s_2_37s_50831, namebuf);
+        Tbl.addItemFormatted(row, RTT_COL, false, "%.2f ms", it->rtt);
+      Tbl.addItemFormatted(row, HOST_COL, false, "%s", namebuf);
       row++;
       it++;
     }
   }
 
-  log_write(LOG_PLAIN, str_37s_2_37s_50831, Tbl.printableTable(NULL));
+  log_write(LOG_PLAIN, "%s", Tbl.printableTable(NULL));
 
   log_flush(LOG_PLAIN);
 }
@@ -2373,24 +2372,24 @@ static void printtraceroute_xml(const Target *currenths) {
     return;
 
   /* XML traceroute header */
-  xml_open_start_tag(str_trace_5_trace_110620997);
+  xml_open_start_tag("trace");
 
   probe = currenths->traceroute_probespec;
   if (probe.type == PS_TCP) {
-    xml_attribute(str_port_4_port_3446913, str_37d_2_37d_50816, probe.pd.tcp.dport);
-    xml_attribute(str_proto_5_proto_106940904, str_37s_2_37s_50831, proto2ascii_lowercase(probe.proto));
+    xml_attribute("port", "%d", probe.pd.tcp.dport);
+    xml_attribute("proto", "%s", proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_UDP) {
-    xml_attribute(str_port_4_port_3446913, str_37d_2_37d_50816, probe.pd.udp.dport);
-    xml_attribute(str_proto_5_proto_106940904, str_37s_2_37s_50831, proto2ascii_lowercase(probe.proto));
+    xml_attribute("port", "%d", probe.pd.udp.dport);
+    xml_attribute("proto", "%s", proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_SCTP) {
-    xml_attribute(str_port_4_port_3446913, str_37d_2_37d_50816, probe.pd.sctp.dport);
-    xml_attribute(str_proto_5_proto_106940904, str_37s_2_37s_50831, proto2ascii_lowercase(probe.proto));
+    xml_attribute("port", "%d", probe.pd.sctp.dport);
+    xml_attribute("proto", "%s", proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_ICMP || probe.type == PS_PROTO) {
     const struct nprotoent *proto = nmap_getprotbynum(probe.proto);
     if (proto == NULL)
-      xml_attribute(str_proto_5_proto_106940904, str_37d_2_37d_50816, probe.proto);
+      xml_attribute("proto", "%d", probe.proto);
     else
-      xml_attribute(str_proto_5_proto_106940904, str_37s_2_37s_50831, proto->p_name);
+      xml_attribute("proto", "%s", proto->p_name);
   }
   xml_close_start_tag();
   xml_newline();
@@ -2400,15 +2399,15 @@ static void printtraceroute_xml(const Target *currenths) {
        it++) {
     if (it->timedout)
       continue;
-    xml_open_start_tag(str_hop_3_hop_103497);
-    xml_attribute(str_ttl_3_ttl_115180, str_37d_2_37d_50816, it->ttl);
-    xml_attribute(str_ipadd_6_paddr_1182483048, str_37s_2_37s_50831, inet_ntop_ez(&it->addr, sizeof(it->addr)));
+    xml_open_start_tag("hop");
+    xml_attribute("ttl", "%d", it->ttl);
+    xml_attribute("ipaddr", "%s", inet_ntop_ez(&it->addr, sizeof(it->addr)));
     if (it->rtt < 0)
-      xml_attribute(str_rtt_3_rtt_113266, str_4545_2_4545_1601730);
+      xml_attribute("rtt", "--");
     else
-      xml_attribute(str_rtt_3_rtt_113266, str_37462_4_7462f_1512483034, it->rtt);
+      xml_attribute("rtt", "%.2f", it->rtt);
     if (!it->name.empty())
-      xml_attribute(str_host_4_host_3208616, str_37s_2_37s_50831, it->name.c_str());
+      xml_attribute("host", "%s", it->name.c_str());
     xml_close_empty_tag();
     xml_newline();
   }
@@ -2427,13 +2426,13 @@ void printtraceroute(const Target *currenths) {
 void printtimes(const Target *currenths) {
   if (currenths->to.srtt != -1 || currenths->to.rttvar != -1) {
     if (o.debugging) {
-      log_write(LOG_STDOUT, str_Final_51_7d92n_2132347005,
+      log_write(LOG_STDOUT, "Final times for host: srtt: %d rttvar: %d  to: %d\n",
         currenths->to.srtt, currenths->to.rttvar, currenths->to.timeout);
     }
-    xml_open_start_tag(str_times_5_times_110364486);
-    xml_attribute(str_srtt_4_srtt_3539231, str_37d_2_37d_50816, currenths->to.srtt);
-    xml_attribute(str_rttva_6_ttvar_920543371, str_37d_2_37d_50816, currenths->to.rttvar);
-    xml_attribute(str_to_2_to_3707, str_37d_2_37d_50816, currenths->to.timeout);
+    xml_open_start_tag("times");
+    xml_attribute("srtt", "%d", currenths->to.srtt);
+    xml_attribute("rttvar", "%d", currenths->to.rttvar);
+    xml_attribute("to", "%d", currenths->to.timeout);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -2446,13 +2445,13 @@ void printStatusMessage() {
   gettimeofday(&tv, NULL);
   int time = (int) (o.TimeSinceStart(&tv));
 
-  log_write(LOG_STDOUT, str_Stats_75_7s92n_1189817354,
+  log_write(LOG_STDOUT, "Stats: %d:%02d:%02d elapsed; %u hosts completed (%u up), %d undergoing %s\n",
             time / 60 / 60, time / 60 % 60, time % 60, o.numhosts_scanned,
             o.numhosts_up, o.numhosts_scanning,
             scantype2str(o.current_scantype));
 }
 
-/* Prints the beginning of a str_finis_8_ished_673660814 start tag, with time, timestr, and
+/* Prints the beginning of a "finished" start tag, with time, timestr, and
    elapsed attributes. Leaves the start tag open so you can add more attributes.
    You have to close the tag with xml_close_empty_tag. */
 void print_xml_finished_open(time_t timep, const struct timeval *tv) {
@@ -2462,32 +2461,32 @@ void print_xml_finished_open(time_t timep, const struct timeval *tv) {
   chomp(mytime);
 
   xml_open_start_tag("finished");
-  xml_attribute(str_time_4_time_3560141, str_37lu_3_37lu_1575661, (unsigned long) timep);
+  xml_attribute("time", "%lu", (unsigned long) timep);
   if (!err) {
-    xml_attribute(str_times_7_mestr_1313907644, str_37s_2_37s_50831, mytime);
-    xml_attribute(str_summa_7_mmary_1857640538,
-        str_Nmap3_57_conds_695852372,
+    xml_attribute("timestr", "%s", mytime);
+    xml_attribute("summary",
+        "Nmap done at %s; %u %s (%u %s up) scanned in %.2f seconds",
         mytime, o.numhosts_scanned,
-        (o.numhosts_scanned == 1) ? str_IP32a_10_dress_1532940142 : str_IP32a_12_esses_18302820,
-        o.numhosts_up, (o.numhosts_up == 1) ? str_host_4_host_3208616 : str_hosts_5_hosts_99467211,
+        (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
+        o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
         o.TimeSinceStart(tv));
   }
   else {
-    xml_attribute(str_summa_7_mmary_1857640538,
-        str_Nmap3_51_conds_471326868,
+    xml_attribute("summary",
+        "Nmap done; %u %s (%u %s up) scanned in %.2f seconds",
         o.numhosts_scanned,
-        (o.numhosts_scanned == 1) ? str_IP32a_10_dress_1532940142 : str_IP32a_12_esses_18302820,
-        o.numhosts_up, (o.numhosts_up == 1) ? str_host_4_host_3208616 : str_hosts_5_hosts_99467211,
+        (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
+        o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
         o.TimeSinceStart(tv));
   }
-  xml_attribute(str_elaps_7_apsed_1666428548, str_37462_4_7462f_1512483034, o.TimeSinceStart(tv));
+  xml_attribute("elapsed", "%.2f", o.TimeSinceStart(tv));
 }
 
 void print_xml_hosts() {
-  xml_open_start_tag(str_hosts_5_hosts_99467211);
-  xml_attribute("up", str_37u_2_37u_50833, o.numhosts_up);
-  xml_attribute("down", str_37u_2_37u_50833, o.numhosts_scanned - o.numhosts_up);
-  xml_attribute(str_total_5_total_110549828, str_37u_2_37u_50833, o.numhosts_scanned);
+  xml_open_start_tag("hosts");
+  xml_attribute("up", "%u", o.numhosts_up);
+  xml_attribute("down", "%u", o.numhosts_scanned - o.numhosts_up);
+  xml_attribute("total", "%u", o.numhosts_scanned);
   xml_close_empty_tag();
 }
 
@@ -2508,35 +2507,35 @@ void printfinaloutput() {
       && !o.scriptupdatedb
 #endif
       )
-    error(str_WARNI_55_ned46_170333584);
+    error("WARNING: No targets were specified, so 0 hosts scanned.");
   if (o.numhosts_scanned == 1 && o.numhosts_up == 0 && !o.listscan &&
       o.pingtype != PINGTYPE_NONE)
-    log_write(LOG_STDOUT, str_Note5_82_Pn92n_1781633607);
+    log_write(LOG_STDOUT, "Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn\n");
   else if (o.numhosts_up > 0) {
     if (o.osscan && o.servicescan)
-      log_write(LOG_PLAIN, str_OS32a_103_4692n_1195790526);
+      log_write(LOG_PLAIN, "OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .\n");
     else if (o.osscan)
-      log_write(LOG_PLAIN, str_OS32d_91_4692n_1775481852);
+      log_write(LOG_PLAIN, "OS detection performed. Please report any incorrect results at https://nmap.org/submit/ .\n");
     else if (o.servicescan)
-      log_write(LOG_PLAIN, str_Servi_96_4692n_498134219);
+      log_write(LOG_PLAIN, "Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .\n");
     else if (o.udpscan && o.defeat_icmp_ratelimit)
-      log_write(LOG_PLAIN, str_WARNI_130_4692n_1335875190);
+      log_write(LOG_PLAIN, "WARNING: Some ports marked closed|filtered may actually be open. For more accurate results, do not use --defeat-icmp-ratelimit .\n");
 
   }
 
   log_write(LOG_STDOUT | LOG_SKID,
-            str_Nmap3_53_ds92n_1436429374,
+            "Nmap done: %u %s (%u %s up) scanned in %.2f seconds\n",
             o.numhosts_scanned,
-            (o.numhosts_scanned == 1) ? str_IP32a_10_dress_1532940142 : str_IP32a_12_esses_18302820,
-            o.numhosts_up, (o.numhosts_up == 1) ? str_host_4_host_3208616 : str_hosts_5_hosts_99467211,
+            (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
+            o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
             o.TimeSinceStart(&tv));
   if (o.verbose && o.isr00t && o.RawScan())
-    log_write(LOG_STDOUT | LOG_SKID, str_32323_15_7s92n_978281371,
+    log_write(LOG_STDOUT | LOG_SKID, "           %s\n",
               getFinalPacketStats(statbuf, sizeof(statbuf)));
 
-  xml_start_tag(str_runst_8_stats_834595060);
+  xml_start_tag("runstats");
   print_xml_finished_open(timep, &tv);
-  xml_attribute(str_exit_4_exit_3127582, str_succe_7_ccess_1867169789);
+  xml_attribute("exit", "success");
   xml_close_empty_tag();
   print_xml_hosts();
   xml_newline();
@@ -2547,18 +2546,18 @@ void printfinaloutput() {
   if (!err) {
     chomp(mytime);
     log_write(LOG_NORMAL | LOG_MACHINE,
-        str_3532N_63_ds92n_2145817541,
+        "# Nmap done at %s -- %u %s (%u %s up) scanned in %.2f seconds\n",
         mytime, o.numhosts_scanned,
-        (o.numhosts_scanned == 1) ? str_IP32a_10_dress_1532940142 : str_IP32a_12_esses_18302820,
-        o.numhosts_up, (o.numhosts_up == 1) ? str_host_4_host_3208616 : str_hosts_5_hosts_99467211,
+        (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
+        o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
         o.TimeSinceStart(&tv));
   }
   else {
     log_write(LOG_NORMAL | LOG_MACHINE,
-        str_3532N_57_ds92n_70469731,
+        "# Nmap done -- %u %s (%u %s up) scanned in %.2f seconds\n",
         o.numhosts_scanned,
-        (o.numhosts_scanned == 1) ? str_IP32a_10_dress_1532940142 : str_IP32a_12_esses_18302820,
-        o.numhosts_up, (o.numhosts_up == 1) ? str_host_4_host_3208616 : str_hosts_5_hosts_99467211,
+        (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
+        o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
         o.TimeSinceStart(&tv));
   }
 
@@ -2608,12 +2607,12 @@ void printdatafilepaths() {
     r.data_file = map_iter->first;
     s = path_get_dirname(map_iter->second.c_str());
     if (s == NULL)
-      fatal(str_37s58_39_emory_1035032814, __func__);
+      fatal("%s: failed to allocate temporary memory", __func__);
     r.dir = std::string(s);
     free(s);
     s = path_get_basename(map_iter->second.c_str());
     if (s == NULL)
-      fatal(str_37s58_39_emory_1035032814, __func__);
+      fatal("%s: failed to allocate temporary memory", __func__);
     r.file = std::string(s);
     free(s);
 
@@ -2645,11 +2644,11 @@ void printdatafilepaths() {
   if (num_dirs == 0) {
     /* If no files were read, print a message only in debugging mode. */
     if (o.debugging > 0)
-      log_write(LOG_PLAIN, str_No32d_21_4692n_1622645264);
+      log_write(LOG_PLAIN, "No data files read.\n");
   } else if (num_dirs == 1 && o.verbose && !o.debugging) {
     /* If all the files were from the same directory and we're in verbose mode,
        print a brief message unless we are also in debugging mode. */
-    log_write(LOG_PLAIN, str_Read3_26_7s92n_1768018538, dir.c_str());
+    log_write(LOG_PLAIN, "Read data files from: %s\n", dir.c_str());
   } else if ((num_dirs == 1 && o.debugging) || num_dirs > 1) {
     /* If files were read from more than one directory, or if they were read
        from one directory and we are in debugging mode, display all the files
@@ -2658,13 +2657,13 @@ void printdatafilepaths() {
     while (iter != df.end()) {
       dir = iter->dir;
       /* Write the directory name. */
-      log_write(LOG_PLAIN, str_Read3_13_37s58_1560176172, dir.c_str());
+      log_write(LOG_PLAIN, "Read from %s:", dir.c_str());
       /* Write files in that directory on the same line. */
       while (iter != df.end() && iter->dir == dir) {
-        log_write(LOG_PLAIN, str_3237s_3_3237s_48639952, iter->file.c_str());
+        log_write(LOG_PLAIN, " %s", iter->file.c_str());
         iter++;
       }
-      log_write(LOG_PLAIN, str_4692n_3_4692n_49688243);
+      log_write(LOG_PLAIN, ".\n");
     }
   }
 }
@@ -2672,15 +2671,15 @@ void printdatafilepaths() {
 static inline const char *nslog2str(nsock_loglevel_t loglevel) {
   switch(loglevel) {
     case NSOCK_LOG_DBG_ALL:
-      return str_DEBUG_10_2FULL_565626209;
+      return "DEBUG FULL";
     case NSOCK_LOG_DBG:
-      return str_DEBUG_5_DEBUG_64921139;
+      return "DEBUG";
     case NSOCK_LOG_INFO:
-      return str_INFO_4_INFO_2251950;
+      return "INFO";
     case NSOCK_LOG_ERROR:
-      return str_ERROR_5_ERROR_66247144;
+      return "ERROR";
     default:
-      return str_63636_3_36363_1594733175;
+      return "???";
   };
 }
 
@@ -2704,7 +2703,7 @@ static void nmap_nsock_stderr_logger(const struct nsock_log_rec *rec) {
 
   elapsed_time = TIMEVAL_MSEC_SUBTRACT(rec->time, *(o.getStartTime()));
 
-  log_write(LOG_STDERR, str_NSOCK_27_7s92n_490926287, nslog2str(rec->level),
+  log_write(LOG_STDERR, "NSOCK %s [%.4fs] %s(): %s\n", nslog2str(rec->level),
             elapsed_time/1000.0, rec->func, rec->msg);
 }
 

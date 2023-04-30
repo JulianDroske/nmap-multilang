@@ -1,4 +1,3 @@
-#include "./multilang/zh_CN/osscan2.h"
 
 /***************************************************************************
  * osscan2.cc -- Routines used for 2nd Generation OS detection via         *
@@ -84,7 +83,7 @@
 extern NmapOps o;
 #ifdef WIN32
 /* from libdnet's intf-win32.c */
-extern str_C_1_C_67 int g_has_npcap_loopback;
+extern "C" int g_has_npcap_loopback;
 #endif
 
 /* 8 options:
@@ -106,19 +105,19 @@ static struct {
   u8* val;
   int len;
 } prbOpts[] = {
-  {(u8*) str_92x03_80_92x02_1103927526, 20},
-  {(u8*) str_92x02_80_92x00_482715575, 20},
-  {(u8*) str_92x08_80_92x80_1178316317, 20},
-  {(u8*) str_92x04_64_92x00_1579719434, 16},
-  {(u8*) str_92x02_80_92x00_612974045, 20},
-  {(u8*) str_92x02_64_92x00_1854369393, 16},
-  {(u8*) str_92x03_48_92x01_1146849469, 12},
-  {(u8*) str_92x03_80_92x02_1227410913, 20},
-  {(u8*) str_92x03_80_92x02_1227410913, 20},
-  {(u8*) str_92x03_80_92x02_1227410913, 20},
-  {(u8*) str_92x03_80_92x02_1227410913, 20},
-  {(u8*) str_92x03_80_92x02_1227410913, 20},
-  {(u8*) str_92x03_80_92x02_1500999388, 20}
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x05\xb4\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20},
+  {(u8*) "\x02\x04\x05\x78\x03\x03\x00\x04\x02\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x00", 20},
+  {(u8*) "\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x01\x01\x03\x03\x05\x01\x02\x04\x02\x80", 20},
+  {(u8*) "\x04\x02\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x03\x03\x0A\x00", 16},
+  {(u8*) "\x02\x04\x02\x18\x04\x02\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x03\x03\x0A\x00", 20},
+  {(u8*) "\x02\x04\x01\x09\x04\x02\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00", 16},
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x05\xb4\x04\x02\x01\x01", 12},
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x01\x09\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20},
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x01\x09\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20},
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x01\x09\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20},
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x01\x09\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20},
+  {(u8*) "\x03\x03\x0A\x01\x02\x04\x01\x09\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20},
+  {(u8*) "\x03\x03\x0f\x01\x02\x04\x01\x09\x08\x0A\xff\xff\xff\xff\x00\x00\x00\x00\x04\x02", 20}
 };
 
 /* TCP Window sizes. Numbering is the same as for prbOpts[] */
@@ -146,19 +145,19 @@ static const char *make_aval_ipid_seq(int ipid_seqclass, u32 ipids[NUM_SEQ_SAMPL
     break;
   case IPID_SEQ_INCR_BY_2:
   case IPID_SEQ_INCR:
-    return str_I_1_I_73;
+    return "I";
     break;
   case IPID_SEQ_BROKEN_INCR:
-    return str_BI_2_BI_2119;
+    return "BI";
     break;
   case IPID_SEQ_RPI:
-    return str_RI_2_RI_2615;
+    return "RI";
     break;
   case IPID_SEQ_RD:
-    return str_RD_2_RD_2610;
+    return "RD";
     break;
   case IPID_SEQ_ZERO:
-    return str_Z_1_Z_90;
+    return "Z";
     break;
   default:
     /* Signal to omit test result. */
@@ -335,50 +334,50 @@ int get_ipid_sequence_16(int numSamples, const u32 *ipids, int islocalhost) {
 /* Convert a TCP sequence prediction difficulty index like 1264386
    into a difficulty string like "Worthy Challenge */
 const char *seqidx2difficultystr(unsigned long idx) {
-  return  (idx < 3) ? str_Trivi_12_2joke_859791271 : (idx < 6) ? str_Easy_4_Easy_2152482 : (idx < 11) ? str_Mediu_6_edium_1994163307 : (idx < 12) ? str_Formi_10_dable_1763056935 : (idx < 16) ? str_Worth_16_lenge_807251399 : str_Good3_10_uck33_1304429773;
+  return  (idx < 3) ? "Trivial joke" : (idx < 6) ? "Easy" : (idx < 11) ? "Medium" : (idx < 12) ? "Formidable" : (idx < 16) ? "Worthy challenge" : "Good luck!";
 }
 
 const char *ipidclass2ascii(int seqclass) {
   switch (seqclass) {
   case IPID_SEQ_CONSTANT:
-    return str_Dupli_19_03341_247225330;
+    return "Duplicated ipid (!)";
   case IPID_SEQ_INCR:
-    return str_Incre_11_ental_1541726278;
+    return "Incremental";
   case IPID_SEQ_INCR_BY_2:
-    return str_Incre_17_by322_679535254;
+    return "Incrementing by 2";
   case IPID_SEQ_BROKEN_INCR:
-    return str_Broke_32_ental_239637131;
+    return "Broken little-endian incremental";
   case IPID_SEQ_RD:
-    return str_Rando_10_mized_2109749491;
+    return "Randomized";
   case IPID_SEQ_RPI:
-    return str_Rando_26_ments_2032467842;
+    return "Random positive increments";
   case IPID_SEQ_ZERO:
-    return str_All32_9_zeros_1285189419;
+    return "All zeros";
   case IPID_SEQ_UNKNOWN:
-    return str_Busy3_28_class_58654837;
+    return "Busy server or unknown class";
   default:
-    return str_ERROR_11_WTF63_193252127;
+    return "ERROR, WTF?";
   }
 }
 
 const char *tsseqclass2ascii(int seqclass) {
   switch (seqclass) {
   case TS_SEQ_ZERO:
-    return str_zero3_14_stamp_559831569;
+    return "zero timestamp";
   case TS_SEQ_2HZ:
-    return str_2HZ_3_2HZ_50372;
+    return "2HZ";
   case TS_SEQ_100HZ:
-    return str_100HZ_5_100HZ_46730947;
+    return "100HZ";
   case TS_SEQ_1000HZ:
-    return str_1000H_6_000HZ_1448635825;
+    return "1000HZ";
   case TS_SEQ_OTHER_NUM:
-    return str_other_5_other_106069776;
+    return "other";
   case TS_SEQ_UNSUPPORTED:
-    return str_none3_27_ted41_499172207;
+    return "none returned (unsupported)";
   case TS_SEQ_UNKNOWN:
-    return str_unkno_13_class_1198363375;
+    return "unknown class";
   default:
-    return str_ERROR_11_WTF63_193252127;
+    return "ERROR, WTF?";
   }
 }
 
@@ -401,38 +400,38 @@ static void begin_sniffer(HostOsScan *HOS, std::vector<Target *> &Targets) {
     for (targetno = 0; targetno < Targets.size(); targetno++) {
       len = Snprintf(dst_hosts + filterlen,
                      sizeof(dst_hosts) - filterlen,
-                     str_37ssr_13_3237s_1089977452, (targetno == 0)? "" : str_32or3_4_2or32_1509680737,
+                     "%ssrc host %s", (targetno == 0)? "" : " or ",
                      Targets[targetno]->targetipstr());
       if (len < 0 || len + filterlen >= (int) sizeof(dst_hosts))
-        fatal(str_ran32_29_hosts_1500446510);
+        fatal("ran out of space in dst_hosts");
       filterlen += len;
     }
-    len = Snprintf(dst_hosts + filterlen, sizeof(dst_hosts) - filterlen, str_41414_3_14141_1535566263);
+    len = Snprintf(dst_hosts + filterlen, sizeof(dst_hosts) - filterlen, ")))");
     if (len < 0 || len + filterlen >= (int) sizeof(dst_hosts))
-      fatal(str_ran32_29_hosts_1500446510);
+      fatal("ran out of space in dst_hosts");
   }
 
   /* Open a network interface for packet capture */
   HOS->pd = my_pcap_open_live(Targets[0]->deviceName(), 8192,
     o.spoofsource ? 1 : 0, pcap_selectable_fd_valid() ? 200 : 2);
   if (HOS->pd == NULL)
-    fatal(str_37s_2_37s_50831, PCAP_OPEN_ERRMSG);
+    fatal("%s", PCAP_OPEN_ERRMSG);
 
   struct sockaddr_storage ss = Targets[0]->source();
   /* Build the final BPF filter */
   if (ss.ss_family == AF_INET) {
     if (doIndividual)
-      len = Snprintf(pcap_filter, sizeof(pcap_filter), str_dst32_37_4037s_1021681524,
+      len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (icmp or (tcp and (%s",
                    inet_ntoa(((struct sockaddr_in *)&ss)->sin_addr), dst_hosts);
     else
-      len = Snprintf(pcap_filter, sizeof(pcap_filter), str_dst32_29_tcp41_736075727,
+      len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (icmp or tcp)",
                    inet_ntoa(((struct sockaddr_in *)&ss)->sin_addr));
     if (len < 0 || len >= (int) sizeof(pcap_filter))
-      fatal(str_ran32_31_ilter_2025193309);
+      fatal("ran out of space in pcap filter");
 
     /* Compile and apply the filter to the pcap descriptor */
     if (o.debugging)
-      log_write(LOG_PLAIN, str_Packe_39_7s92n_642119566, Targets[0]->deviceFullName(), pcap_filter);
+      log_write(LOG_PLAIN, "Packet capture filter (device %s): %s\n", Targets[0]->deviceFullName(), pcap_filter);
     set_pcap_filter(Targets[0]->deviceFullName(), HOS->pd, pcap_filter);
   }
 
@@ -496,7 +495,7 @@ static void doSeqTests(OsScanInfo *OSI, HostOsScan *HOS) {
   do {
     if (timeToSleep > 0) {
       if (o.debugging > 1)
-        log_write(LOG_PLAIN, str_Sleep_36_be92n_1200170776, timeToSleep);
+        log_write(LOG_PLAIN, "Sleep %dus for next sequence probe\n", timeToSleep);
       usleep(timeToSleep);
     }
 
@@ -507,7 +506,7 @@ static void doSeqTests(OsScanInfo *OSI, HostOsScan *HOS) {
     if (o.debugging > 2) {
       for (hostI = OSI->incompleteHosts.begin(); hostI != OSI->incompleteHosts.end(); hostI++) {
         hss = (*hostI)->hss;
-        log_write(LOG_PLAIN, str_Host3_45_7d92n_218651324,
+        log_write(LOG_PLAIN, "Host %s. ProbesToSend %d: \tProbesActive %d\n",
                   hss->target->targetipstr(), hss->numProbesToSend(),
                   hss->numProbesActive());
       }
@@ -564,7 +563,7 @@ static void doSeqTests(OsScanInfo *OSI, HostOsScan *HOS) {
         to_usec = 2000;
 
       if (o.debugging > 2)
-        log_write(LOG_PLAIN, str_pcap3_24_4692n_215852851, to_usec);
+        log_write(LOG_PLAIN, "pcap wait time is %ld.\n", to_usec);
 
       ip = (struct ip*) readipv4_pcap(HOS->pd, &bytes, to_usec, &rcvdtime, &linkhdr, true);
 
@@ -664,7 +663,7 @@ static void doTUITests(OsScanInfo *OSI, HostOsScan *HOS) {
 
     if (timeToSleep > 0) {
       if (o.debugging > 1) {
-        log_write(LOG_PLAIN, str_Time3_30_3292n_895931944, timeToSleep);
+        log_write(LOG_PLAIN, "Time to sleep %d. Sleeping. \n", timeToSleep);
       }
 
       usleep(timeToSleep);
@@ -678,7 +677,7 @@ static void doTUITests(OsScanInfo *OSI, HostOsScan *HOS) {
       for (hostI = OSI->incompleteHosts.begin();
           hostI != OSI->incompleteHosts.end(); hostI++) {
         hss = (*hostI)->hss;
-        log_write(LOG_PLAIN, str_Host3_45_7d92n_218651324,
+        log_write(LOG_PLAIN, "Host %s. ProbesToSend %d: \tProbesActive %d\n",
                   hss->target->targetipstr(), hss->numProbesToSend(),
                   hss->numProbesActive());
       }
@@ -735,7 +734,7 @@ static void doTUITests(OsScanInfo *OSI, HostOsScan *HOS) {
       if (to_usec < 2000) to_usec = 2000;
 
       if (o.debugging > 2)
-        log_write(LOG_PLAIN, str_pcap3_24_4692n_215852851, to_usec);
+        log_write(LOG_PLAIN, "pcap wait time is %ld.\n", to_usec);
 
       ip = (struct ip*) readipv4_pcap(HOS->pd, &bytes, to_usec, &rcvdtime, &linkhdr, true);
 
@@ -820,7 +819,7 @@ static void endRound(OsScanInfo *OSI, HostOsScan *HOS, int roundNum) {
       memcpy(&(hsi->target->seq), &hsi->hss->si, sizeof(struct seq_info));
       if (roundNum > 0) {
         if (o.verbose)
-          log_write(LOG_STDOUT, str_WARNI_40_7d92n_947906427, roundNum + 1);
+          log_write(LOG_STDOUT, "WARNING: OS didn't match until try #%d\n", roundNum + 1);
       }
       match_fingerprint(hsi->FPR->FPs[roundNum], hsi->FPR,
                         o.reference_FPs, OSSCAN_GUESS_THRESHOLD);
@@ -894,7 +893,7 @@ static void printFP(OsScanInfo *OSI) {
     FPR = hsi->FPR;
 
     log_write(LOG_NORMAL|LOG_SKID_NOXLT|LOG_STDOUT,
-          str_No32O_70_2n37s_1207463579,
+          "No OS matches for %s by new os scan system.\n\nTCP/IP fingerprint:\n%s",
           hsi->target->targetipstr(),
           mergeFPs(FPR->FPs, FPR->numFPs, true,
                hsi->target->TargetSockAddr(), hsi->target->distance,
@@ -957,22 +956,22 @@ OFProbe::OFProbe() {
 const char *OFProbe::typestr() const {
   switch (type) {
   case OFP_UNSET:
-    return str_OFP95_9_UNSET_1975200268;
+    return "OFP_UNSET";
   case OFP_TSEQ:
-    return str_OFP95_8_5TSEQ_351900448;
+    return "OFP_TSEQ";
   case OFP_TOPS:
-    return str_OFP95_8_5TOPS_351896947;
+    return "OFP_TOPS";
   case OFP_TECN:
-    return str_OFP95_8_5TECN_351886929;
+    return "OFP_TECN";
   case OFP_T1_7:
-    return str_OFP95_8_T1957_1977013239;
+    return "OFP_T1_7";
   case OFP_TUDP:
-    return str_OFP95_8_5TUDP_351902338;
+    return "OFP_TUDP";
   case OFP_TICMP:
-    return str_OFP95_9_TICMP_1976287876;
+    return "OFP_TICMP";
   default:
     assert(false);
-    return str_ERROR_5_ERROR_66247144;
+    return "ERROR";
   }
 }
 
@@ -1070,7 +1069,7 @@ void HostOsScanStats::initScanStats() {
   /* We should look at a different port if we know that this port is tcpwrapped */
   if (o.servicescan && openTCPPort > 0 && target->ports.isTCPwrapped(openTCPPort)) {
     if (o.debugging) {
-      log_write(LOG_STDOUT, str_First_45_d4632_1860984219, openTCPPort);
+      log_write(LOG_STDOUT, "First choice open TCP port %d is tcpwrapped. ", openTCPPort);
     }
     /* Keep moving to other ports until we find one which is not tcpwrapped, or until we run out of ports */
     while ((tport = target->ports.nextPort(tport, &port, IPPROTO_TCP, PORT_OPEN))) {
@@ -1084,9 +1083,9 @@ void HostOsScanStats::initScanStats() {
 
     if (o.debugging) {
       if (target->ports.isTCPwrapped(openTCPPort)) {
-        log_write(LOG_STDOUT, str_All32_110_4692n_643917166, openTCPPort);
+        log_write(LOG_STDOUT, "All open TCP ports are found to be tcpwrapped. Using %d for OS detection, but results might not be accurate.\n", openTCPPort);
       } else {
-        log_write(LOG_STDOUT, str_Using_48_4692n_1556200408, openTCPPort);
+        log_write(LOG_STDOUT, "Using non-tcpwrapped port %d for OS detection.\n", openTCPPort);
       }
     }
   }
@@ -1221,7 +1220,7 @@ std::list<OFProbe *>::iterator HostOsScanStats::getActiveProbe(OFProbeType type,
   if (probeI == probesActive.end()) {
     /* not found!? */
     if (o.debugging > 1)
-      log_write(LOG_PLAIN, str_Probe_54_7d92n_1072080952, type, subid);
+      log_write(LOG_PLAIN, "Probe doesn't exist! Probe type: %d. Probe subid: %d\n", type, subid);
     return probesActive.end();
   }
 
@@ -1252,7 +1251,7 @@ double HostOsScanStats::timingRatio() const {
   int msec_ideal = OS_SEQ_PROBE_DELAY * (NUM_SEQ_SAMPLES - 1);
   int msec_taken = TIMEVAL_MSEC_SUBTRACT(seq_send_times[NUM_SEQ_SAMPLES -1 ], seq_send_times[0]);
   if (o.debugging) {
-    log_write(LOG_PLAIN, str_OS32d_65_3f92n_1170469861,
+    log_write(LOG_PLAIN, "OS detection timingRatio() == (%.3f - %.3f) * 1000 / %d == %.3f\n",
               seq_send_times[NUM_SEQ_SAMPLES - 1].tv_sec + seq_send_times[NUM_SEQ_SAMPLES - 1].tv_usec / 1000000.0, seq_send_times[0].tv_sec + (float) seq_send_times[0].tv_usec / 1000000.0, msec_ideal, (float) msec_taken / msec_ideal);
   }
   return (double) msec_taken / msec_ideal;
@@ -1312,10 +1311,10 @@ void HostOsScan::adjust_times(HostOsScanStats *hss, const OFProbe *probe, const 
   if (probe->tryno > 0 || rcvdtime == NULL) {
     if (o.debugging > 1) {
       if (probe->tryno > 0) {
-        log_write(LOG_PLAIN, str_OS32s_49_4192n_505820081,
+        log_write(LOG_PLAIN, "OS scan DROPPED probe to %s detected (tryno %d)\n",
           hss->target->targetipstr(), probe->tryno);
       } else {
-        log_write(LOG_PLAIN, str_OS32s_57_4192n_2056547279,
+        log_write(LOG_PLAIN, "OS scan DROPPED probe to %s detected (rcvdtime == NULL)\n",
           hss->target->targetipstr());
       }
     }
@@ -1345,7 +1344,7 @@ HostOsScan::HostOsScan(Target *t) {
 #endif
     )) {
     if ((ethsd = eth_open_cached(t->deviceName())) == NULL)
-      fatal(str_37s58_39_37s41_2031883275, __func__, t->deviceName());
+      fatal("%s: Failed to open ethernet device (%s)", __func__, t->deviceName());
     rawsd = -1;
   } else {
 #ifdef WIN32
@@ -1353,7 +1352,7 @@ HostOsScan::HostOsScan(Target *t) {
 #endif
     rawsd = nmap_raw_socket();
     if (rawsd < 0)
-      pfatal(str_socke_21_3237s_1509366238, __func__);
+      pfatal("socket troubles in %s", __func__);
     unblock_socket(rawsd);
     ethsd = NULL;
   }
@@ -1723,7 +1722,7 @@ void HostOsScan::sendNextProbe(HostOsScanStats *hss) {
   stats->num_probes_active++;
 
   if (o.debugging > 1) {
-    log_write(LOG_PLAIN, str_Send3_40_7s92n_77114893,
+    log_write(LOG_PLAIN, "Send probe (type: %s, subid: %d) to %s\n",
               probe->typestr(), probe->subid, hss->target->targetipstr());
   }
 
@@ -1994,7 +1993,7 @@ bool HostOsScan::processResp(HostOsScanStats *hss, const struct ip *ip, unsigned
       adjust_times(hss, probe, rcvdtime);
 
     if (o.debugging > 1) {
-      log_write(LOG_PLAIN, str_Got32_61_7s92n_1883422633,
+      log_write(LOG_PLAIN, "Got a valid response for probe (type: %s subid: %d) from %s\n",
             probe->typestr(), probe->subid, hss->target->targetipstr());
     }
 
@@ -2033,13 +2032,13 @@ void HostOsScan::makeFP(HostOsScanStats *hss) {
          it is important here to note whether responses were or were not
          received */
       hss->FPtests[i] = new FingerTest(INT2ID(i), *o.reference_FPs->MatchPoints);
-      hss->FPtests[i]->setAVal(str_R_1_R_82, str_N_1_N_78);
+      hss->FPtests[i]->setAVal("R", "N");
     }
     else if (hss->FPtests[i]) {
       FingerTest &test = *hss->FPtests[i];
       /* The value for this attribute is the
        * received TTL. We replace it with the initial TTL. */
-      const char *recvTTL = test.getAVal(str_T_1_T_84);
+      const char *recvTTL = test.getAVal("T");
       if (recvTTL) {
         int ttl = strtol(recvTTL, NULL, 16);
 
@@ -2051,12 +2050,12 @@ void HostOsScan::makeFP(HostOsScanStats *hss) {
              the "true" hop count. Add the number of hops between
              us and the target (hss->distance - 1) to the received
              TTL to get the initial TTL. */
-          test.setAVal(str_T_1_T_84, hss->target->FPR->cp_hex(ttl + hss->distance - 1));
+          test.setAVal("T", hss->target->FPR->cp_hex(ttl + hss->distance - 1));
         } else {
           /* Guess the initial TTL value */
-          test.setAVal(str_TG_2_TG_2675, hss->target->FPR->cp_hex(get_initial_ttl_guess(ttl)));
+          test.setAVal("TG", hss->target->FPR->cp_hex(get_initial_ttl_guess(ttl)));
           /* Delete this unknown-distance-dependent value */
-          test.setAVal(str_T_1_T_84, NULL);
+          test.setAVal("T", NULL);
         }
       }
     }
@@ -2153,7 +2152,7 @@ int HostOsScan::send_closedudp_probe(HostOsScanStats *hss,
 
   /* check that required fields are there and not too silly */
   if (!sport || !dport) {
-    error(str_37s58_40_uck33_1831161883, __func__);
+    error("%s: One or more of your parameters suck!", __func__);
     return 1;
   }
 
@@ -2207,7 +2206,7 @@ int HostOsScan::send_closedudp_probe(HostOsScanStats *hss,
 
     if ((res = send_ip_packet(rawsd, ethptr, hss->target->TargetSockAddr(), packet, ntohs(ip->ip_len))) == -1)
       {
-        gh_perror(str_send9_20_3237s_256041725, __func__);
+        gh_perror("send_ip_packet in %s", __func__);
         return 1;
       }
   }
@@ -2373,12 +2372,12 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
       }
     }
 
-    test.setAVal(str_SP_2_SP_2653, hss->target->FPR->cp_hex(hss->si.index));
-    test.setAVal(str_GCD_3_GCD_70376, hss->target->FPR->cp_hex(seq_gcd));
-    test.setAVal(str_ISR_3_ISR_72808, hss->target->FPR->cp_hex((unsigned int) seq_rate));
+    test.setAVal("SP", hss->target->FPR->cp_hex(hss->si.index));
+    test.setAVal("GCD", hss->target->FPR->cp_hex(seq_gcd));
+    test.setAVal("ISR", hss->target->FPR->cp_hex((unsigned int) seq_rate));
   } else if (hss->si.responses > 0) {
     if (o.debugging)
-      log_write(LOG_PLAIN, str_Insuf_91_te92n_574383439, hss->target->targetipstr(), hss->si.responses);
+      log_write(LOG_PLAIN, "Insufficient responses from %s for TCP sequencing (%d), OS detection may be less accurate\n", hss->target->targetipstr(), hss->si.responses);
   }
 
   /* Now it is time to deal with IPIDs */
@@ -2430,9 +2429,9 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
   }
 
   /* This fills in TI=Z or something like that. */
-  test.setAVal(str_TI_2_TI_2677, make_aval_ipid_seq(tcp_ipid_seqclass, hss->ipid.tcp_ipids, hss));
-  test.setAVal(str_CI_2_CI_2150, make_aval_ipid_seq(tcp_closed_ipid_seqclass, hss->ipid.tcp_closed_ipids, hss));
-  test.setAVal(str_II_2_II_2336, make_aval_ipid_seq(icmp_ipid_seqclass, hss->ipid.icmp_ipids, hss));
+  test.setAVal("TI", make_aval_ipid_seq(tcp_ipid_seqclass, hss->ipid.tcp_ipids, hss));
+  test.setAVal("CI", make_aval_ipid_seq(tcp_closed_ipid_seqclass, hss->ipid.tcp_closed_ipids, hss));
+  test.setAVal("II", make_aval_ipid_seq(icmp_ipid_seqclass, hss->ipid.icmp_ipids, hss));
 
   /* SS: Shared IP ID sequence boolean */
   if ((tcp_ipid_seqclass == IPID_SEQ_INCR ||
@@ -2441,13 +2440,13 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
        (icmp_ipid_seqclass == IPID_SEQ_INCR ||
         icmp_ipid_seqclass == IPID_SEQ_BROKEN_INCR ||
         icmp_ipid_seqclass == IPID_SEQ_RPI)) {
-    /* Both are incremental. Thus we have str_SS_2_SS_2656 test. Check if they
+    /* Both are incremental. Thus we have "SS" test. Check if they
        are in the same sequence. */
     u32 avg = (hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] - hss->ipid.tcp_ipids[0]) / (good_tcp_ipid_num - 1);
     if (hss->ipid.icmp_ipids[0] < hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] + 3 * avg) {
-      test.setAVal(str_SS_2_SS_2656, str_S_1_S_83);
+      test.setAVal("SS", "S");
     } else {
-      test.setAVal("SS", str_O_1_O_79);
+      test.setAVal("SS", "O");
     }
   }
 
@@ -2493,7 +2492,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
         /* long long is probably excessive for number of days, but sick of
          * truncation warnings and finding the right format string for time_t
          */
-        log_write(LOG_STDOUT, str_Ignor_41_ys92n_571287998,
+        log_write(LOG_STDOUT, "Ignoring claimed %s uptime of %lld days\n",
         hss->target->targetipstr(), (long long) (uptime / 86400));
       }
       uptime = 0;
@@ -2504,7 +2503,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
   switch (hss->si.ts_seqclass) {
 
   case TS_SEQ_ZERO:
-    test.setAVal(str_TS_2_TS_2687, str_0_1_0_48);
+    test.setAVal("TS", "0");
     break;
   case TS_SEQ_2HZ:
   case TS_SEQ_100HZ:
@@ -2531,10 +2530,10 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
       tsnewval = (unsigned int)(0.5 + log(avg_ts_hz) / log(2.0));
     }
 
-    test.setAVal(str_TS_2_TS_2687, hss->target->FPR->cp_hex(tsnewval));
+    test.setAVal("TS", hss->target->FPR->cp_hex(tsnewval));
     break;
   case TS_SEQ_UNSUPPORTED:
-    test.setAVal(str_TS_2_TS_2687, str_U_1_U_85);
+    test.setAVal("TS", "U");
     break;
   }
 }
@@ -2553,7 +2552,7 @@ void HostOsScan::makeTOpsFP(HostOsScanStats *hss) {
   }
   if (n < 6) {
     if (o.debugging)
-      error(str_We32d_42_3237s_380390192, hss->target->targetipstr());
+      error("We didn't get all the TOps replies from %s", hss->target->targetipstr());
     return;
   }
 
@@ -2578,7 +2577,7 @@ void HostOsScan::makeTWinFP(HostOsScanStats *hss) {
   }
   if (n < 6) {
     if (o.debugging)
-      error(str_We32d_42_3237s_1312528634, hss->target->targetipstr());
+      error("We didn't get all the TWin replies from %s", hss->target->targetipstr());
     return;
   }
 
@@ -2607,7 +2606,7 @@ bool HostOsScan::processTSeqResp(HostOsScanStats *hss, const struct ip *ip, int 
 
   if ((tcp->th_flags & TH_RST)) {
     if (hss->si.responses == 0) {
-      error(str_WARNI_57_pen63_2068248250,
+      error("WARNING: RST from %s port %d -- is this port really open?",
               hss->target->targetipstr(), hss->openTCPPort);
     }
     return false;
@@ -2623,9 +2622,9 @@ bool HostOsScan::processTSeqResp(HostOsScanStats *hss, const struct ip *ip, int 
     if (seq_response_num != replyNo) {
       /* BzzT! Value out of range */
       if (o.debugging) {
-        error(str_Unabl_61_37s46_649452452,
+        error("Unable to associate os scan response with sent packet for %s.",
               hss->target->targetipstr());
-        error(str_Recei_46_ket58_2072200780,
+        error("Received ack: %lX; sequence sent: %lX. Packet:",
               (unsigned long) ntohl(tcp->th_ack),
               (unsigned long) tcpSeqBase);
         readtcppacket((unsigned char *)ip, ntohs(ip->ip_len));
@@ -2668,7 +2667,7 @@ bool HostOsScan::processTOpsResp(HostOsScanStats *hss, const struct tcp_hdr *tcp
 
   if (opsParseResult <= 0) {
     if (opsParseResult < 0 && o.debugging)
-      error(str_Optio_48_37s46_2098152421, replyNo, hss->target->targetipstr());
+      error("Option parse error for TOps response %d from %s.", replyNo, hss->target->targetipstr());
     hss->TOps_AVs[replyNo] = "";
   }
   else {
@@ -2706,44 +2705,44 @@ bool HostOsScan::processTEcnResp(HostOsScanStats *hss, const struct ip *ip) {
   hss->FP_TEcn = new FingerTest(FingerPrintDef::ECN, *o.reference_FPs->MatchPoints);
   FingerTest &test = *hss->FP_TEcn;
 
-  test.setAVal(str_R_1_R_82, str_Y_1_Y_89);
+  test.setAVal("R", "Y");
 
   /* don't frag flag */
   if (ntohs(ip->ip_off) & IP_DF)
-    test.setAVal(str_DF_2_DF_2178, str_Y_1_Y_89);
+    test.setAVal("DF", "Y");
   else
-    test.setAVal(str_DF_2_DF_2178, str_N_1_N_78);
+    test.setAVal("DF", "N");
 
   /* TTL */
-  test.setAVal(str_T_1_T_84, hss->target->FPR->cp_hex(ip->ip_ttl));
+  test.setAVal("T", hss->target->FPR->cp_hex(ip->ip_ttl));
 
   /* TCP Window size */
-  test.setAVal(str_W_1_W_87, hss->target->FPR->cp_hex(ntohs(tcp->th_win)));
+  test.setAVal("W", hss->target->FPR->cp_hex(ntohs(tcp->th_win)));
 
   /* Now for the TCP options ... */
   int opsParseResult = get_tcpopt_string(tcp, this->tcpMss, ops_buf, sizeof(ops_buf));
 
   if (opsParseResult <= 0) {
     if (opsParseResult < 0 && o.debugging)
-      error(str_Optio_44_37s46_1931725784, hss->target->targetipstr());
-    test.setAVal(str_O_1_O_79, "");
+      error("Option parse error for ECN response from %s.", hss->target->targetipstr());
+    test.setAVal("O", "");
   }
   else {
-    test.setAVal(str_O_1_O_79, hss->target->FPR->cp_dup(ops_buf, opsParseResult));
+    test.setAVal("O", hss->target->FPR->cp_dup(ops_buf, opsParseResult));
   }
 
   /* Explicit Congestion Notification support test */
   if ((tcp->th_flags & TH_ECE) && (tcp->th_flags & TH_CWR))
     /* echo back */
-    test.setAVal(str_CC_2_CC_2144, str_S_1_S_83);
+    test.setAVal("CC", "S");
   else if (tcp->th_flags & TH_ECE)
     /* support */
-    test.setAVal(str_CC_2_CC_2144, str_Y_1_Y_89);
+    test.setAVal("CC", "Y");
   else if (!(tcp->th_flags & TH_CWR))
     /* not support */
-    test.setAVal(str_CC_2_CC_2144, str_N_1_N_78);
+    test.setAVal("CC", "N");
   else
-    test.setAVal(str_CC_2_CC_2144, str_O_1_O_79);
+    test.setAVal("CC", "O");
 
   /* TCP miscellaneous quirks test */
   p = quirks_buf;
@@ -2758,7 +2757,7 @@ bool HostOsScan::processTEcnResp(HostOsScanStats *hss, const struct ip *ip) {
     *p++ = 'U';
   }
   *p = '\0';
-  test.setAVal(str_Q_1_Q_81, hss->target->FPR->cp_dup(quirks_buf, p - quirks_buf));
+  test.setAVal("Q", hss->target->FPR->cp_dup(quirks_buf, p - quirks_buf));
 
   return true;
 }
@@ -2784,20 +2783,20 @@ bool HostOsScan::processT1_7Resp(HostOsScanStats *hss, const struct ip *ip, int 
 
   /* First we give the "response" flag to say we did actually receive
      a packet -- this way we won't match a template with R=N */
-  test.setAVal(str_R_1_R_82, str_Y_1_Y_89);
+  test.setAVal("R", "Y");
 
   /* Next we check whether the Don't Fragment bit is set */
   if (ntohs(ip->ip_off) & IP_DF)
-    test.setAVal(str_DF_2_DF_2178, str_Y_1_Y_89);
+    test.setAVal("DF", "Y");
   else
-    test.setAVal(str_DF_2_DF_2178, str_N_1_N_78);
+    test.setAVal("DF", "N");
 
   /* TTL */
-  test.setAVal(str_T_1_T_84, hss->target->FPR->cp_hex(ip->ip_ttl));
+  test.setAVal("T", hss->target->FPR->cp_hex(ip->ip_ttl));
 
   if (replyNo != 0) {
     /* Now we do the TCP Window size */
-    test.setAVal(str_W_1_W_87, hss->target->FPR->cp_hex(ntohs(tcp->th_win)));
+    test.setAVal("W", hss->target->FPR->cp_hex(ntohs(tcp->th_win)));
   }
 
   /* Seq test values:
@@ -2807,13 +2806,13 @@ bool HostOsScan::processT1_7Resp(HostOsScanStats *hss, const struct ip *ip, int 
      O   = other
   */
   if (ntohl(tcp->th_seq) == 0)
-    test.setAVal(str_S_1_S_83, str_Z_1_Z_90);
+    test.setAVal("S", "Z");
   else if (ntohl(tcp->th_seq) == tcpAck)
-    test.setAVal(str_S_1_S_83, str_A_1_A_65);
+    test.setAVal("S", "A");
   else if (ntohl(tcp->th_seq) == tcpAck + 1)
-    test.setAVal(str_S_1_S_83, str_A43_2_A43_64128);
+    test.setAVal("S", "A+");
   else
-    test.setAVal(str_S_1_S_83, str_O_1_O_79);
+    test.setAVal("S", "O");
 
   /* ACK test values:
      Z   = zero
@@ -2822,13 +2821,13 @@ bool HostOsScan::processT1_7Resp(HostOsScanStats *hss, const struct ip *ip, int 
      O   = other
   */
   if (ntohl(tcp->th_ack) == 0)
-    test.setAVal(str_A_1_A_65, str_Z_1_Z_90);
+    test.setAVal("A", "Z");
   else if (ntohl(tcp->th_ack) == tcpSeqBase)
-    test.setAVal(str_A_1_A_65, str_S_1_S_83);
+    test.setAVal("A", "S");
   else if (ntohl(tcp->th_ack) == tcpSeqBase + 1)
-    test.setAVal(str_A_1_A_65, str_S43_2_S43_81426);
+    test.setAVal("A", "S+");
   else
-    test.setAVal(str_A_1_A_65, str_O_1_O_79);
+    test.setAVal("A", "O");
 
   /* Flags. They must be in this order:
      E = ECN Echo
@@ -2858,7 +2857,7 @@ bool HostOsScan::processT1_7Resp(HostOsScanStats *hss, const struct ip *ip, int 
       *p++ = flag_defs[i].c;
   }
   *p = '\0';
-  test.setAVal(str_F_1_F_70, hss->target->FPR->cp_dup(flags_buf, p - flags_buf));
+  test.setAVal("F", hss->target->FPR->cp_dup(flags_buf, p - flags_buf));
 
   if (replyNo != 0) {
     char ops_buf[256];
@@ -2867,20 +2866,20 @@ bool HostOsScan::processT1_7Resp(HostOsScanStats *hss, const struct ip *ip, int 
     int opsParseResult = get_tcpopt_string(tcp, this->tcpMss, ops_buf, sizeof(ops_buf));
     if (opsParseResult <= 0) {
       if (opsParseResult < 0 && o.debugging)
-        error(str_Optio_44_37s46_1876126590, replyNo, hss->target->targetipstr());
-      test.setAVal(str_O_1_O_79, "");
+        error("Option parse error for T%d response from %s.", replyNo, hss->target->targetipstr());
+      test.setAVal("O", "");
     }
     else {
-      test.setAVal(str_O_1_O_79, hss->target->FPR->cp_dup(ops_buf, opsParseResult));
+      test.setAVal("O", hss->target->FPR->cp_dup(ops_buf, opsParseResult));
     }
   }
 
   /* Rst Data CRC32 */
   length = (int) ntohs(ip->ip_len) - 4 * ip->ip_hl -4 * tcp->th_off;
   if ((tcp->th_flags & TH_RST) && length>0) {
-    test.setAVal(str_RD_2_RD_2610, hss->target->FPR->cp_hex(nbase_crc32(((u8 *)tcp) + 4 * tcp->th_off, length)));
+    test.setAVal("RD", hss->target->FPR->cp_hex(nbase_crc32(((u8 *)tcp) + 4 * tcp->th_off, length)));
   } else {
-    test.setAVal(str_RD_2_RD_2610, str_0_1_0_48);
+    test.setAVal("RD", "0");
   }
 
   /* TCP miscellaneous quirks test */
@@ -2896,7 +2895,7 @@ bool HostOsScan::processT1_7Resp(HostOsScanStats *hss, const struct ip *ip, int 
     *p++ = 'U';
   }
   *p = '\0';
-  test.setAVal(str_Q_1_Q_81, hss->target->FPR->cp_dup(quirks_buf, p - quirks_buf));
+  test.setAVal("Q", hss->target->FPR->cp_dup(quirks_buf, p - quirks_buf));
 
   return true;
 }
@@ -2934,7 +2933,7 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, const struct ip *ip) {
   FingerTest &test = *hss->FP_TUdp;
 
   /* First of all, if we got this far the response was yes */
-  test.setAVal(str_R_1_R_82, str_Y_1_Y_89);
+  test.setAVal("R", "Y");
 
   /* Also, we now know that the port we reached was closed */
   if (hss->target->FPR->osscan_closedudpport == -1)
@@ -2942,26 +2941,26 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, const struct ip *ip) {
 
   /* Now let us do an easy one, Don't fragment */
   if (ntohs(ip->ip_off) & IP_DF)
-    test.setAVal(str_DF_2_DF_2178, str_Y_1_Y_89);
+    test.setAVal("DF", "Y");
   else
-    test.setAVal(str_DF_2_DF_2178, str_N_1_N_78);
+    test.setAVal("DF", "N");
 
   /* TTL */
-  test.setAVal(str_T_1_T_84, hss->target->FPR->cp_hex(ip->ip_ttl));
+  test.setAVal("T", hss->target->FPR->cp_hex(ip->ip_ttl));
 
   /* Now we look at the IP datagram length that was returned, some
      machines send more of the original packet back than others */
-  test.setAVal(str_IPL_3_IPL_72709, hss->target->FPR->cp_hex(ntohs(ip->ip_len)));
+  test.setAVal("IPL", hss->target->FPR->cp_hex(ntohs(ip->ip_len)));
 
   /* unused filed not zero in Destination Unreachable Message */
-  test.setAVal(str_UN_2_UN_2713, hss->target->FPR->cp_hex(ntohl(icmp->icmp_void)));
+  test.setAVal("UN", hss->target->FPR->cp_hex(ntohl(icmp->icmp_void)));
 
   /* OK, lets check the returned IP length, some systems @$@ this
      up */
   if (ntohs(ip2->ip_len) == 328)
-    test.setAVal(str_RIPL_4_RIPL_2515571, str_G_1_G_71);
+    test.setAVal("RIPL", "G");
   else
-    test.setAVal(str_RIPL_4_RIPL_2515571, hss->target->FPR->cp_hex(ntohs(ip2->ip_len)));
+    test.setAVal("RIPL", hss->target->FPR->cp_hex(ntohs(ip2->ip_len)));
 
   /* This next test doesn't work on Solaris because the lamers
      overwrite our ip_id */
@@ -2969,9 +2968,9 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, const struct ip *ip) {
 
   /* Now lets see how they treated the ID we sent ... */
   if (ntohs(ip2->ip_id) == hss->upi.ipid)
-    test.setAVal(str_RID_3_RID_81133, str_G_1_G_71); /* The good "expected" value */
+    test.setAVal("RID", "G"); /* The good "expected" value */
   else
-    test.setAVal(str_RID_3_RID_81133, hss->target->FPR->cp_hex(ntohs(ip2->ip_id)));
+    test.setAVal("RID", hss->target->FPR->cp_hex(ntohs(ip2->ip_id)));
 
 #endif
 
@@ -2983,22 +2982,22 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, const struct ip *ip) {
   checksum = *checksumptr;
 
   if (checksum == 0) {
-    test.setAVal(str_RIPCK_5_RIPCK_77982497, str_Z_1_Z_90);
+    test.setAVal("RIPCK", "Z");
   } else {
     *checksumptr = 0;
     if (in_cksum((unsigned short *)ip2, 20) == checksum) {
-      test.setAVal(str_RIPCK_5_RIPCK_77982497, str_G_1_G_71); /* The "expected" good value */
+      test.setAVal("RIPCK", "G"); /* The "expected" good value */
     } else {
-      test.setAVal(str_RIPCK_5_RIPCK_77982497, str_I_1_I_73); /* They modified it */
+      test.setAVal("RIPCK", "I"); /* They modified it */
     }
     *checksumptr = checksum;
   }
 
   /* UDP checksum */
   if (udp->uh_sum == hss->upi.udpck)
-    test.setAVal(str_RUCK_4_RUCK_2526699, str_G_1_G_71); /* The "expected" good value */
+    test.setAVal("RUCK", "G"); /* The "expected" good value */
   else
-    test.setAVal(str_RUCK_4_RUCK_2526699, hss->target->FPR->cp_hex(ntohs(udp->uh_sum)));
+    test.setAVal("RUCK", hss->target->FPR->cp_hex(ntohs(udp->uh_sum)));
 
   /* Finally we ensure the data is OK */
   datastart = ((unsigned char *)udp) + 8;
@@ -3010,9 +3009,9 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, const struct ip *ip) {
     datastart++;
   }
   if (datastart < dataend)
-    test.setAVal(str_RUD_3_RUD_81505, str_I_1_I_73); /* They modified it */
+    test.setAVal("RUD", "I"); /* They modified it */
   else
-    test.setAVal(str_RUD_3_RUD_81505, str_G_1_G_71);
+    test.setAVal("RUD", "G");
 
   /* Count hop count */
   if (hss->distance == -1) {
@@ -3061,7 +3060,7 @@ bool HostOsScan::processTIcmpResp(HostOsScanStats *hss, const struct ip *ip, int
   hss->FP_TIcmp= new FingerTest(FingerPrintDef::IE, *o.reference_FPs->MatchPoints);
   FingerTest &test = *hss->FP_TIcmp;
 
-  test.setAVal(str_R_1_R_82, str_Y_1_Y_89);
+  test.setAVal("R", "Y");
 
   /* DFI test values:
    * Y. Both set DF;
@@ -3073,19 +3072,19 @@ bool HostOsScan::processTIcmpResp(HostOsScanStats *hss, const struct ip *ip, int
   value2 = (ntohs(ip2->ip_off) & IP_DF);
   if (value1 && value2)
     /* both set */
-    test.setAVal(str_DFI_3_DFI_67591, str_Y_1_Y_89);
+    test.setAVal("DFI", "Y");
   else if (value1 && !value2)
     /* echo back */
-    test.setAVal(str_DFI_3_DFI_67591, str_S_1_S_83);
+    test.setAVal("DFI", "S");
   else if (!value1 && !value2)
     /* neither set */
-    test.setAVal(str_DFI_3_DFI_67591, str_N_1_N_78);
+    test.setAVal("DFI", "N");
   else
-    test.setAVal(str_DFI_3_DFI_67591, str_O_1_O_79);
+    test.setAVal("DFI", "O");
 
   /* TTL */
 
-  test.setAVal(str_T_1_T_84, hss->target->FPR->cp_hex(ip1->ip_ttl));
+  test.setAVal("T", hss->target->FPR->cp_hex(ip1->ip_ttl));
 
   /* ICMP Code value. Test values:
    * [Value]. Both set Code to the same value [Value];
@@ -3096,15 +3095,15 @@ bool HostOsScan::processTIcmpResp(HostOsScanStats *hss, const struct ip *ip, int
   value2 = icmp2->icmp_code;
   if (value1 == value2) {
     if (value1 == 0)
-      test.setAVal(str_CD_2_CD_2145, str_Z_1_Z_90);
+      test.setAVal("CD", "Z");
     else
-      test.setAVal(str_CD_2_CD_2145, hss->target->FPR->cp_hex(value1));
+      test.setAVal("CD", hss->target->FPR->cp_hex(value1));
   }
   else if (value1 == 9 && value2 == 0)
     /* both the same as in the corresponding probe */
-    test.setAVal(str_CD_2_CD_2145, str_S_1_S_83);
+    test.setAVal("CD", "S");
   else
-    test.setAVal(str_CD_2_CD_2145, str_O_1_O_79);
+    test.setAVal("CD", "O");
 
   return true;
 }
@@ -3146,7 +3145,7 @@ int HostOsScan::get_tcpopt_string(const struct tcp_hdr *tcp, int mss, char *resu
       memcpy(&tmpshort, q, 2);
       /*  if (ntohs(tmpshort) == mss) */
       /*    *p++ = 'E'; */
-      sprintf(p, str_37hX_3_37hX_1575508, ntohs(tmpshort));
+      sprintf(p, "%hX", ntohs(tmpshort));
       p += strlen(p); /* max movement of p is 4 (0xFFFF) */
       q += 2;
       length -= 4;
@@ -3155,7 +3154,7 @@ int HostOsScan::get_tcpopt_string(const struct tcp_hdr *tcp, int mss, char *resu
         break; /* Window Scale option has 3 bytes */
       *p++ = 'W';
       q++;
-      snprintf(p, length, str_37hhX_4_37hhX_48841332, *((u8*)q));
+      snprintf(p, length, "%hhX", *((u8*)q));
       p += strlen(p); /* max movement of p is 2 (max WScale value is 0xFF) */
       q++;
       length -= 3;
@@ -3255,7 +3254,7 @@ OsScanInfo::OsScanInfo(std::vector<Target *> &Targets) {
 
 #ifdef WIN32
     if (g_has_npcap_loopback == 0 && Targets[targetno]->ifType() == devt_loopback) {
-      log_write(LOG_STDOUT, str_Skipp_90_4192n_170441350, Targets[targetno]->NameIP());
+      log_write(LOG_STDOUT, "Skipping OS Scan against %s because it doesn't work against your own machine (localhost)\n", Targets[targetno]->NameIP());
       continue;
     }
 #endif
@@ -3265,7 +3264,7 @@ OsScanInfo::OsScanInfo(std::vector<Target *> &Targets) {
          Targets[targetno]->ports.getStateCounts(IPPROTO_TCP, PORT_UNFILTERED) == 0)) {
       if (o.osscan_limit) {
         if (o.verbose)
-          log_write(LOG_PLAIN, str_Skipp_78_ts92n_1145675994, Targets[targetno]->NameIP());
+          log_write(LOG_PLAIN, "Skipping OS Scan against %s due to absence of open (or perhaps closed) ports\n", Targets[targetno]->NameIP());
         continue;
       } else {
         Targets[targetno]->osscanSetFlag(OS_PERF_UNREL);
@@ -3297,7 +3296,7 @@ HostOsScanInfo *OsScanInfo::findIncompleteHost(const struct sockaddr_storage *ss
   const struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
   if (sin->sin_family != AF_INET)
-    fatal(str_37s32_28_dress_297803097, __func__);
+    fatal("%s passed a non IPv4 address", __func__);
 
   for (hostI = incompleteHosts.begin(); hostI != incompleteHosts.end(); hostI++) {
     if ((*hostI)->target->v4hostip()->s_addr == sin->sin_addr.s_addr)
@@ -3351,14 +3350,14 @@ int OsScanInfo::removeCompletedHosts() {
       if (o.verbose && numInitialTargets > 50) {
         int remain = incompleteHosts.size() - 1;
         if (remain && !timedout)
-          log_write(LOG_STDOUT, str_Compl_47_4192n_1106110510,
+          log_write(LOG_STDOUT, "Completed os scan against %s in %.3fs (%d %s)\n",
                     hsi->target->targetipstr(),
                     o.TimeSinceStart() - this->starttime, remain,
-                    (remain == 1)? str_host3_9_2left_2080999794 : str_hosts_10_2left_854448753);
+                    (remain == 1)? "host left" : "hosts left");
         else if (timedout)
-          log_write(LOG_STDOUT, str_37s32_37_4192n_613345288,
+          log_write(LOG_STDOUT, "%s timed out during os scan (%d %s)\n",
                     hsi->target->targetipstr(), remain,
-                    (remain == 1)? str_host3_9_2left_2080999794 : str_hosts_10_2left_854448753);
+                    (remain == 1)? "host left" : "hosts left");
       }
       incompleteHosts.erase(hostI);
       hostsRemoved++;
@@ -3469,8 +3468,8 @@ int OSScan::os_scan_ipv4(std::vector<Target *> &Targets) {
       bool plural = (OSI.numIncompleteHosts() != 1);
       if (!plural) {
         (*(OSI.incompleteHosts.begin()))->target->NameIP(targetstr, sizeof(targetstr));
-      } else Snprintf(targetstr, sizeof(targetstr), str_37d32_8_hosts_26687924, (int) OSI.numIncompleteHosts());
-      log_write(LOG_STDOUT, str_37s32_38_7s92n_350395625, (itry == 0)? str_Initi_10_ating_1430173386 : str_Retry_8_rying_244909990, itry + 1, targetstr);
+      } else Snprintf(targetstr, sizeof(targetstr), "%d hosts", (int) OSI.numIncompleteHosts());
+      log_write(LOG_STDOUT, "%s OS detection (try #%d) against %s\n", (itry == 0)? "Initiating" : "Retrying", itry + 1, targetstr);
       log_flush_all();
     }
     startRound(&OSI, &HOS, itry);

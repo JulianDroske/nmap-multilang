@@ -1,4 +1,3 @@
-#include "./multilang/zh_CN/service_scan.h"
 
 /***************************************************************************
  * service_scan.cc -- Routines used for service fingerprinting to determine *
@@ -153,7 +152,7 @@ public:
   // SSL connections.  It's overwritten each time.  void* is used so we don't
   // need to #ifdef HAVE_OPENSSL all over.  We'll cast later as needed.
   void *ssl_session;
-  // if a match was found (see above), this tells whether it was a str_soft_4_soft_3535914
+  // if a match was found (see above), this tells whether it was a "soft"
   // or hard match.  It is always false if no match has been found.
   bool softMatchFound;
   // most recent probe executed (or in progress).  If there has been a match
@@ -287,7 +286,7 @@ ServiceProbeMatch::~ServiceProbeMatch() {
      tmplt == "123"
      flags == ""
    *tmplt must be freed if the return value is true.
-   Special handling for cpe:/txt/ => modestr == str_cpe_3_cpe_98712 tmplt == "cpe:/txt" */
+   Special handling for cpe:/txt/ => modestr == "cpe" tmplt == "cpe:/txt" */
 static bool next_template(const char **matchtext, char modestr[4], char **tmplt,
   char flags[4], int lineno) {
   const char *p, *q;
@@ -307,12 +306,12 @@ static bool next_template(const char **matchtext, char modestr[4], char **tmplt,
   if (*q == ':' && 0 == strcmp(modestr, "cpe")) {
     q++;
     if (*q != '/')
-      fatal(str_37s58_73_robes_215028014, __func__, lineno);
-    // p == str_cpe58_8_64646_768366980
+      fatal("%s: parse error (cpe delimiter not '/') on line %d of nmap-service-probes", __func__, lineno);
+    // p == "cpe:/..."
   }
   else {
     if (*q == '\0' || isspace(*q))
-      fatal(str_37s58_61_robes_1634431201, __func__, lineno);
+      fatal("%s: parse error (bare word) on line %d of nmap-service-probes", __func__, lineno);
     // p == start of template
     p = q + 1;
   }
@@ -321,7 +320,7 @@ static bool next_template(const char **matchtext, char modestr[4], char **tmplt,
 
   q = strchr(q + 1, delimchar);
   if (q == NULL)
-    fatal(str_37s58_73_robes_1210751150, __func__, lineno);
+    fatal("%s: parse error (missing end delimiter) on line %d of nmap-service-probes", __func__, lineno);
 
   *tmplt = mkstr(p, q);
 
@@ -334,7 +333,7 @@ static bool next_template(const char **matchtext, char modestr[4], char **tmplt,
 
   q = p + i;
   if (!isspace(*q))
-    fatal(str_37s58_66_robes_1038203699, __func__, lineno);
+    fatal("%s: parse error (flags too long) on line %d of nmap-service-probes", __func__, lineno);
 
   /* Update pointer for caller. */
   *matchtext = q;
@@ -344,8 +343,8 @@ static bool next_template(const char **matchtext, char modestr[4], char **tmplt,
 
 // match text from the nmap-service-probes file.  This must be called
 // before you try and do anything with this match.  This function
-// should be passed the whole line starting with str_match_5_match_103668165 or
-// str_softm_9_match_2059669541 in nmap-service-probes.  The line number that the text
+// should be passed the whole line starting with "match" or
+// "softmatch" in nmap-service-probes.  The line number that the text
 // is provided so that it can be reported in error messages.  This
 // function will abort the program if there is a syntax problem.
 void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
@@ -358,27 +357,27 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
   int pcre_erroffset = 0;
   char **curr_tmp = NULL;
 
-  if (isInitialized) fatal(str_Sorry_48_izion_2064569190, __func__);
+  if (isInitialized) fatal("Sorry ... %s does not yet support reinitializion", __func__);
   if (!matchtext || !*matchtext)
-    fatal(str_37s58_59_bes41_1777624556, __func__, lineno);
+    fatal("%s: no matchtext passed in (line %d of nmap-service-probes)", __func__, lineno);
   isInitialized = true;
 
   deflineno = lineno;
   while(isspace((int) (unsigned char) *matchtext)) matchtext++;
 
-  // first we find whether this is a str_soft_4_soft_3535914 or normal match
-  if (strncmp(matchtext, str_softm_10_tch32_637496186, 10) == 0) {
+  // first we find whether this is a "soft" or normal match
+  if (strncmp(matchtext, "softmatch ", 10) == 0) {
     isSoft = true;
     matchtext += 10;
-  } else if (strncmp(matchtext, str_match_6_tch32_840860388, 6) == 0) {
+  } else if (strncmp(matchtext, "match ", 6) == 0) {
     isSoft = false;
     matchtext += 6;
   } else
-    fatal(str_37s58_94_h9234_1879303855, __func__, lineno);
+    fatal("%s: parse error on line %d of nmap-service-probes - must begin with \"match\" or \"softmatch\"", __func__, lineno);
 
   // next comes the service name
   p = strchr(matchtext, ' ');
-  if (!p) fatal(str_37s58_78_2name_918464839, __func__, lineno);
+  if (!p) fatal("%s: parse error on line %d of nmap-service-probes: could not find service name", __func__, lineno);
 
   servicename = cp_strndup(matchtext, p - matchtext);
 
@@ -387,14 +386,14 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
   // used, the char after m can be anything (within reason, slash in
   // this case) and tells us what delineates the end of the regex.
   // After the delineating character are any single-character
-  // options. ('i' means str_case3_16_itive_1307379234, 's' means that . matches
+  // options. ('i' means "case insensitive", 's' means that . matches
   // newlines (both are just as in perl)
   matchtext = p;
   if (!next_template(&matchtext, modestr, &matchstr, flags, lineno))
-    fatal(str_37s58_49_robes_1131318932, __func__, lineno);
+    fatal("%s: parse error on line %d of nmap-service-probes", __func__, lineno);
 
-  if (strcmp(modestr, str_m_1_m_109) != 0)
-    fatal(str_37s58_80_39m39_1883653077, __func__, lineno);
+  if (strcmp(modestr, "m") != 0)
+    fatal("%s: parse error on line %d of nmap-service-probes: matchtext must begin with 'm'", __func__, lineno);
 
   // any options?
   for (p = flags; *p != '\0'; p++) {
@@ -403,7 +402,7 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
     else if (*p == 's')
       matchops_dotall = true;
     else
-      fatal(str_37s58_59_robes_990584090, __func__, lineno);
+      fatal("%s: illegal regexp option on line %d of nmap-service-probes", __func__, lineno);
   }
 
   // Next we compile and study the regular expression to match
@@ -417,7 +416,7 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
                                    &pcre_erroffset, NULL);
 
   if (regex_compiled == NULL)
-    fatal(str_37s58_80_7s92n_787372084, __func__, lineno, pcre_erroffset, pcre_errptr);
+    fatal("%s: illegal regexp on line %d of nmap-service-probes (at regexp offset %d): %s\n", __func__, lineno, pcre_erroffset, pcre_errptr);
 
   // Now study the regexp for greater efficiency
   regex_extra = pcre_study(regex_compiled, 0
@@ -426,7 +425,7 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
 #endif
   , &pcre_errptr);
   if (pcre_errptr != NULL)
-    fatal(str_37s58_71_7s92n_1027502603, __func__, lineno, pcre_errptr);
+    fatal("%s: failed to pcre_study regexp on line %d of nmap-service-probes: %s\n", __func__, lineno, pcre_errptr);
 
   if (!regex_extra) {
     regex_extra = (pcre_extra *) pcre_malloc(sizeof(pcre_extra));
@@ -474,14 +473,14 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
           break;
         }
       default:
-        fatal(str_37s58_69_robes_824311064, __func__, modestr, lineno);
+        fatal("%s: Unknown template specifier '%s' on line %d of nmap-service-probes", __func__, modestr, lineno);
         break;
     }
 
     /* This one already defined? */
     if (*curr_tmp) {
       if (o.debugging) {
-        error(str_WARNI_87_robes_1808445271,
+        error("WARNING: Template \"%s/%s/\" replaced with \"%s/%s/\" on line %d of nmap-service-probes",
               modestr, *curr_tmp, modestr, tmptemplate, lineno);
       }
       free(*curr_tmp);
@@ -495,7 +494,7 @@ void ServiceProbeMatch::InitMatch(const char *matchtext, int lineno) {
 
   // If the buf (of length buflen) match the regex in this
   // ServiceProbeMatch, returns the details of the match (service
-  // name, version number if applicable, and whether this is a str_soft_4_soft_3535914
+  // name, version number if applicable, and whether this is a "soft"
   // match.  If the buf doesn't match, the serviceName field in the
   // structure will be NULL.  The MatchDetails structure returned is
   // only valid until the next time this function is called. The only
@@ -524,17 +523,17 @@ const struct MatchDetails *ServiceProbeMatch::testMatch(const u8 *buf, int bufle
 #ifdef PCRE_ERROR_MATCHLIMIT  // earlier PCRE versions lack this
     if (rc == PCRE_ERROR_MATCHLIMIT) {
       if (o.debugging || o.verbose > 1)
-        error(str_Warni_82_37s39_1135788098, servicename, matchstr);
+        error("Warning: Hit PCRE_ERROR_MATCHLIMIT when probing for service %s with the regex '%s'", servicename, matchstr);
     } else
 #endif // PCRE_ERROR_MATCHLIMIT
 #ifdef PCRE_ERROR_RECURSIONLIMIT
     if (rc == PCRE_ERROR_RECURSIONLIMIT) {
       if (o.debugging || o.verbose > 1)
-        error(str_Warni_86_37s39_1959354977, servicename, matchstr);
+        error("Warning: Hit PCRE_ERROR_RECURSIONLIMIT when probing for service %s with the regex '%s'", servicename, matchstr);
     } else
 #endif // PCRE_ERROR_RECURSIONLIMIT
       if (rc != PCRE_ERROR_NOMATCH) {
-        fatal(str_Unexp_74_37s39_177090537, rc, servicename, matchstr);
+        fatal("Unexpected PCRE error (%d) when probing for service %s with the regex '%s'", rc, servicename, matchstr);
       }
   } else {
     // Yeah!  Match apparently succeeded.
@@ -604,7 +603,7 @@ static int getsubstcommandargs(struct substargs *args, char *args_start,
       args->arg_types[args->num_args] = SUBSTARGS_ARGTYPE_STRING;
       args->num_args++;
       args_start++;
-      args_start = strpbrk(args_start, str_4441_2_4441_1600765);
+      args_start = strpbrk(args_start, ",)");
       if (!args_start) return -1;
       if (*args_start == ',') args_start++;
     } else {
@@ -614,7 +613,7 @@ static int getsubstcommandargs(struct substargs *args, char *args_start,
       args_start = p;
       args->arg_types[args->num_args] = SUBSTARGS_ARGTYPE_INT;
       args->num_args++;
-      args_start = strpbrk(args_start, str_4441_2_4441_1600765);
+      args_start = strpbrk(args_start, ",)");
       if (!args_start) return -1;
       if (*args_start == ',') args_start++;
     }
@@ -664,12 +663,12 @@ static char *transform_cpe(const char *s) {
 
     /* Section 5.4 of the CPE specification lists these characters to be
        escaped. */
-    if (strchr(str_58476_23_29234_731435884, *p) != NULL) {
-      Snprintf(buf, sizeof(buf), str_37373_6_3702X_979139862, *p);
+    if (strchr(":/?#[]@!$&'()*+,;=%<>\"", *p) != NULL) {
+      Snprintf(buf, sizeof(buf), "%%%02X", *p);
       repl = buf;
     /* Replacing spaces with underscores is also a convention. */
     } else if (isspace(*p)) {
-      repl = str_95_1_95_1820;
+      repl = "_";
     /* Otherwise just make lower-case. */
     } else {
       buf[0] = tolower(*p);
@@ -687,7 +686,7 @@ static char *transform_cpe(const char *s) {
 
 // This function does the substitution of a placeholder like $2 or $P(4). It
 // returns a newly allocated string, or NULL if it fails. tmplvar is a template
-// variable, such as str_36P40_5_40241_1709407238. We set *tmplvarend to the character after the
+// variable, such as "$P(2)". We set *tmplvarend to the character after the
 // variable. subject, subjectlen, ovector, and nummatches mean the same as in
 // dotmplsubst().
 static char *substvar(char *tmplvar, char **tmplvarend,
@@ -743,7 +742,7 @@ static char *substvar(char *tmplvar, char **tmplvarend,
     assert(offend >= 0 && offend <= subjectlen);
     // A plain-jane copy
     strbuf_append(&result, &n, &len, (const char *) subject + offstart, offend - offstart);
-  } else if (strcmp(substcommand, str_P_1_P_80) == 0) {
+  } else if (strcmp(substcommand, "P") == 0) {
     if (command_args.num_args != 1 ||
         command_args.arg_types[0] != SUBSTARGS_ARGTYPE_INT) {
       return NULL;
@@ -757,12 +756,12 @@ static char *substvar(char *tmplvar, char **tmplvarend,
     assert(offend >= 0 && offend <= subjectlen);
     // This filter only includes printable characters.  It is particularly
     // useful for collapsing unicode text that looks like
-    // str_W920O_27_0P920_732993633
+    // "W\0O\0R\0K\0G\0R\0O\0U\0P\0"
     for(i=offstart; i < offend; i++) {
       if (isprint((int) subject[i]))
         strbuf_append(&result, &n, &len, (const char *) subject + i, 1);
     }
-  } else if (strcmp(substcommand, str_SUBST_5_SUBST_79250561) == 0) {
+  } else if (strcmp(substcommand, "SUBST") == 0) {
     char *findstr, *replstr;
     int findstrlen, replstrlen;
     if (command_args.num_args != 3 ||
@@ -792,7 +791,7 @@ static char *substvar(char *tmplvar, char **tmplvarend,
         i += findstrlen;
       }
     }
-  } else if (strcmp(substcommand, str_I_1_I_73) == 0 ){
+  } else if (strcmp(substcommand, "I") == 0 ){
     // Parse an unsigned int
     long long unsigned val = 0;
     bool bigendian = true;
@@ -835,7 +834,7 @@ static char *substvar(char *tmplvar, char **tmplvarend,
         val = (val<<8) + subject[i];
       }
     }
-    buflen = Snprintf(buf, sizeof(buf), str_37llu_4_37llu_48845329, val);
+    buflen = Snprintf(buf, sizeof(buf), "%llu", val);
     if (buflen < 0 || buflen >= (int) sizeof(buf)) {
       return NULL;
     }
@@ -968,7 +967,7 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
   if (product_template) {
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, product_template, product, productlen);
     if (rc != 0) {
-      error(str_Warni_147_4737s_1894457733, subjectlen, productlen, deflineno,
+      error("Warning: Servicescan failed to fill product_template (subjectlen: %d, productlen: %d). Capture exceeds length? Match string was line %d: p/%s/%s/%s", subjectlen, productlen, deflineno,
             (product_template)? product_template : "",
             (version_template)? version_template : "",
             (info_template)? info_template : "");
@@ -980,7 +979,7 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
   if (version_template) {
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, version_template, version, versionlen);
     if (rc != 0) {
-      error(str_Warni_147_4737s_1232705901, subjectlen, versionlen, deflineno,
+      error("Warning: Servicescan failed to fill version_template (subjectlen: %d, versionlen: %d). Capture exceeds length? Match string was line %d: v/%s/%s/%s", subjectlen, versionlen, deflineno,
             (product_template)? product_template : "",
             (version_template)? version_template : "",
             (info_template)? info_template : "");
@@ -992,7 +991,7 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
   if (info_template) {
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, info_template, info, infolen);
     if (rc != 0) {
-      error(str_Warni_141_4737s_1227775196, subjectlen, infolen, deflineno,
+      error("Warning: Servicescan failed to fill info_template (subjectlen: %d, infolen: %d). Capture exceeds length? Match string was line %d: i/%s/%s/%s", subjectlen, infolen, deflineno,
             (product_template)? product_template : "",
             (version_template)? version_template : "",
             (info_template)? info_template : "");
@@ -1004,7 +1003,7 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
   if (hostname_template) {
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, hostname_template, hostname, hostnamelen);
     if (rc != 0) {
-      error(str_Warni_144_37s47_1335728616, subjectlen, hostnamelen, deflineno,
+      error("Warning: Servicescan failed to fill hostname_template (subjectlen: %d, hostnamelen: %d). Capture exceeds length? Match string was line %d: h/%s/", subjectlen, hostnamelen, deflineno,
             (hostname_template)? hostname_template : "");
       if (hostnamelen > 0) *hostname = '\0';
       retval = -1;
@@ -1014,7 +1013,7 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
   if (ostype_template) {
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, ostype_template, ostype, ostypelen);
     if (rc != 0) {
-      error(str_Warni_140_37s47_1089551649, subjectlen, ostypelen, deflineno,
+      error("Warning: Servicescan failed to fill ostype_template (subjectlen: %d, ostypelen: %d). Capture exceeds length? Match string was line %d: o/%s/", subjectlen, ostypelen, deflineno,
             (ostype_template)? ostype_template : "");
       if (ostypelen > 0) *ostype = '\0';
       retval = -1;
@@ -1024,7 +1023,7 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
   if (devicetype_template) {
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, devicetype_template, devicetype, devicetypelen);
     if (rc != 0) {
-      error(str_Warni_134_37s47_640921414, subjectlen, devicetypelen, deflineno,
+      error("Warning: Servicescan failed to fill devicetype_template (subjectlen: %d, devicetypelen: %d). Too long? Match string was line %d: d/%s/", subjectlen, devicetypelen, deflineno,
             (devicetype_template)? devicetype_template : "");
       if (devicetypelen > 0) *devicetype = '\0';
       retval = -1;
@@ -1053,14 +1052,14 @@ int ServiceProbeMatch::getVersionStr(const u8 *subject, int subjectlen,
       cpelen = cpe_olen;
       break;
     default:
-      error(str_Warni_65_02X41_1289606614,
+      error("Warning: ignoring cpe:// template with unknown part '%c' (0x%02X)",
         isprint(part) ? part : '.', part);
       continue;
       break;
     }
     rc = dotmplsubst(subject, subjectlen, ovector, nummatches, cpe_templates[i], cpe, cpelen, transform_cpe);
     if (rc != 0) {
-      error(str_Warni_111_3237s_1299443267, part, subjectlen, cpelen, deflineno,
+      error("Warning: Servicescan failed to fill cpe_%c (subjectlen: %d, cpelen: %d). Too long? Match string was line %d: %s", part, subjectlen, cpelen, deflineno,
             (cpe_templates[i])? cpe_templates[i] : "");
       if (cpelen > 0) *cpe = '\0';
       retval = -1;
@@ -1096,8 +1095,8 @@ ServiceProbe::~ServiceProbe() {
   if (fallbackStr) free(fallbackStr);
 }
 
-  // Parses the str_probe_6_obe32_309550577 line in the nmap-service-probes file.  Pass the rest of the line
-  // after str_probe_6_obe32_309550577.  The format better be:
+  // Parses the "probe " line in the nmap-service-probes file.  Pass the rest of the line
+  // after "probe ".  The format better be:
   // [TCP|UDP] [probename] q|probetext|
   // Note that the delimiter (|) of the probetext can be anything (within reason)
   // the lineno is requested because this function will bail with an error
@@ -1108,39 +1107,39 @@ void ServiceProbe::setProbeDetails(char *pd, int lineno) {
   char delimiter;
 
   if (!pd || !*pd)
-    fatal(str_Parse_66_und33_1743956330, lineno);
+    fatal("Parse error on line %d of nmap-service-probes: no arguments found!", lineno);
 
   // First the protocol
-  if (strncmp(pd, str_TCP32_4_TCP32_79650272, 4) == 0)
+  if (strncmp(pd, "TCP ", 4) == 0)
       probeprotocol = IPPROTO_TCP;
-  else if (strncmp(pd, str_UDP32_4_UDP32_80603584, 4) == 0)
+  else if (strncmp(pd, "UDP ", 4) == 0)
       probeprotocol = IPPROTO_UDP;
-  else fatal(str_Parse_63_tocol_2056013551, lineno);
+  else fatal("Parse error on line %d of nmap-service-probes: invalid protocol", lineno);
   pd += 4;
 
   // Next the service name
-  if (!isalnum((int) (unsigned char) *pd)) fatal(str_Parse_62_2name_990357936, lineno);
+  if (!isalnum((int) (unsigned char) *pd)) fatal("Parse error on line %d of nmap-service-probes - bad probe name", lineno);
   p = strchr(pd, ' ');
-  if (!p) fatal(str_Parse_72_2name_1386485873, lineno);
+  if (!p) fatal("Parse error on line %d of nmap-service-probes - nothing after probe name", lineno);
   probename = cp_strndup(pd, p - pd);
 
   // Now for the probe itself
   pd = p+1;
 
-  if (*pd != 'q') fatal(str_Parse_80_39q39_937173743, lineno);
+  if (*pd != 'q') fatal("Parse error on line %d of nmap-service-probes - probe string must begin with 'q'", lineno);
   delimiter = *(++pd);
   p = strchr(++pd, delimiter);
-  if (!p) fatal(str_Parse_85_tring_1942077149, lineno);
+  if (!p) fatal("Parse error on line %d of nmap-service-probes -- no ending delimiter for probe string", lineno);
   *p = '\0';
   if (!cstring_unescape(pd, &len)) {
-    fatal(str_Parse_72_aping_288835626, lineno);
+    fatal("Parse error on line %d of nmap-service-probes: bad probe string escaping", lineno);
   }
   setProbeString((const u8 *)pd, len);
   // Optional extensible flags
   pd = p+1;
   while (*pd != '\0' && *pd != '\n') {
     while(*pd && isspace((int) (unsigned char) *pd)) pd++;
-    if (0 == strncmp(pd, str_no45p_10_yload_1455264588, 10)) {
+    if (0 == strncmp(pd, "no-payload", 10)) {
       notForPayload = true;
       break; // Remove this if we handle more than 1 flag in the future
     }
@@ -1168,12 +1167,12 @@ void ServiceProbe::setPortVector(std::vector<u16> *portv, const char *portstr,
     if (isdigit((int) (unsigned char) *current_range)) {
       rangestart = strtol(current_range, &endptr, 10);
       if (rangestart < 0 || rangestart > 65535) {
-        fatal(str_Parse_90_usive_1981526747, lineno);
+        fatal("Parse error on line %d of nmap-service-probes: Ports must be between 0 and 65535 inclusive", lineno);
       }
       current_range = endptr;
       while(isspace((int) (unsigned char) *current_range)) current_range++;
     } else {
-      fatal(str_Parse_100_09234_1837060572, lineno);
+      fatal("Parse error on line %d of nmap-service-probes: An example of proper portlist form is \"21-25,53,80\"", lineno);
     }
 
     /* Now I have a rangestart, time to go after rangeend */
@@ -1185,14 +1184,14 @@ void ServiceProbe::setPortVector(std::vector<u16> *portv, const char *portstr,
       if (isdigit((int) (unsigned char) *current_range)) {
         rangeend = strtol(current_range, &endptr, 10);
         if (rangeend < 0 || rangeend > 65535 || rangeend < rangestart) {
-          fatal(str_Parse_90_usive_1981526747, lineno);
+          fatal("Parse error on line %d of nmap-service-probes: Ports must be between 0 and 65535 inclusive", lineno);
         }
         current_range = endptr;
       } else {
-        fatal(str_Parse_100_09234_1837060572, lineno);
+        fatal("Parse error on line %d of nmap-service-probes: An example of proper portlist form is \"21-25,53,80\"", lineno);
       }
     } else {
-      fatal(str_Parse_100_09234_1837060572, lineno);
+      fatal("Parse error on line %d of nmap-service-probes: An example of proper portlist form is \"21-25,53,80\"", lineno);
     }
 
     /* Now I have a rangestart and a rangeend, so I can add these ports */
@@ -1204,7 +1203,7 @@ void ServiceProbe::setPortVector(std::vector<u16> *portv, const char *portstr,
     /* Find the next range */
     while(isspace((int) (unsigned char) *current_range)) current_range++;
     if (*current_range && *current_range != ',') {
-      fatal(str_Parse_100_09234_1837060572, lineno);
+      fatal("Parse error on line %d of nmap-service-probes: An example of proper portlist form is \"21-25,53,80\"", lineno);
     }
     if (*current_range == ',')
       current_range++;
@@ -1264,7 +1263,7 @@ void ServiceProbe::setRarity(const char *portstr, int lineno) {
   tp = atoi(portstr);
 
   if (tp < 1 || tp > 9)
-    fatal(str_37s58_78_nd329_52789582, __func__, lineno);
+    fatal("%s: Rarity directive on line %d of nmap-service-probes must be between 1 and 9", __func__, lineno);
 
   rarity = tp;
 }
@@ -1272,7 +1271,7 @@ void ServiceProbe::setRarity(const char *portstr, int lineno) {
 
   // Takes a match line in a probe description and adds it to the
   // list of matches for this probe.  This function should be passed
-  // the whole line starting with str_match_5_match_103668165 or str_softm_9_match_2059669541 in
+  // the whole line starting with "match" or "softmatch" in
   // nmap-service-probes.  The line number is requested because this
   // function will bail with an error (giving the line number) if it
   // fails to parse the string.
@@ -1296,9 +1295,9 @@ void parse_nmap_service_probe_file(AllProbes *AP, const char *filename) {
   FILE *fp;
 
   // We better start by opening the file
-  fp = fopen(filename, str_r_1_r_114);
+  fp = fopen(filename, "r");
   if (!fp)
-    pfatal(str_Faile_54_ading_1336614611, filename);
+    pfatal("Failed to open nmap-service-probes file %s for reading", filename);
 
   while(fgets(line, sizeof(line), fp)) {
     lineno++;
@@ -1306,9 +1305,9 @@ void parse_nmap_service_probe_file(AllProbes *AP, const char *filename) {
     if (*line == '\n' || *line == '#')
       continue;
 
-    if (strncmp(line, str_Exclu_8_ude32_604834407, 8) == 0) {
+    if (strncmp(line, "Exclude ", 8) == 0) {
       if (AP->excluded_seen)
-        fatal(str_Only3_67_2file_753734499);
+        fatal("Only 1 Exclude directive is allowed in the nmap-service-probes file");
       getpts(line+8, &AP->excludedports);
       AP->excluded_seen = true;
       continue;
@@ -1316,8 +1315,8 @@ void parse_nmap_service_probe_file(AllProbes *AP, const char *filename) {
 
   anotherprobe:
 
-    if (strncmp(line, str_Probe_6_obe32_1355102703, 6) != 0)
-      fatal(str_Parse_116_29234_500411417, lineno, filename);
+    if (strncmp(line, "Probe ", 6) != 0)
+      fatal("Parse error on line %d of nmap-service-probes file: %s -- line was expected to begin with \"Probe \" or \"Exclude \"", lineno, filename);
 
     newProbe = new ServiceProbe();
     newProbe->setProbeDetails(line + 6, lineno);
@@ -1328,7 +1327,7 @@ void parse_nmap_service_probe_file(AllProbes *AP, const char *filename) {
       if (*line == '\n' || *line == '#')
         continue;
 
-      if (strncmp(line, str_Probe_6_obe32_1355102703, 6) == 0) {
+      if (strncmp(line, "Probe ", 6) == 0) {
         if (newProbe->isNullProbe()) {
           assert(!AP->nullProbe);
           AP->nullProbe = newProbe;
@@ -1336,29 +1335,29 @@ void parse_nmap_service_probe_file(AllProbes *AP, const char *filename) {
           AP->probes.push_back(newProbe);
         }
         goto anotherprobe;
-      } else if (strncmp(line, str_ports_6_rts32_392117775, 6) == 0) {
+      } else if (strncmp(line, "ports ", 6) == 0) {
         newProbe->setProbablePorts(SERVICE_TUNNEL_NONE, line + 6, lineno);
-      } else if (strncmp(line, str_sslpo_9_rts32_324755045, 9) == 0) {
+      } else if (strncmp(line, "sslports ", 9) == 0) {
         newProbe->setProbablePorts(SERVICE_TUNNEL_SSL, line + 9, lineno);
-      } else if (strncmp(line, str_rarit_7_ity32_369693002, 7) == 0) {
+      } else if (strncmp(line, "rarity ", 7) == 0) {
         newProbe->setRarity(line + 7, lineno);
-      } else if (strncmp(line, str_fallb_9_ack32_1410432193, 9) == 0) {
+      } else if (strncmp(line, "fallback ", 9) == 0) {
         newProbe->fallbackStr = strdup(line + 9);
-      } else if (strncmp(line, str_total_12_tms32_207907006, 12) == 0) {
+      } else if (strncmp(line, "totalwaitms ", 12) == 0) {
         long waitms = strtol(line + 12, NULL, 10);
         if (waitms < 100 || waitms > 300000)
-          fatal(str_Error_118_conds_974576667, lineno, filename);
+          fatal("Error on line %d of nmap-service-probes file (%s): bad totalwaitms value.  Must be between 100 and 300000 milliseconds", lineno, filename);
         newProbe->totalwaitms = waitms;
-      } else if (strncmp(line, str_tcpwr_13_dms32_1763718665, 13) == 0) {
+      } else if (strncmp(line, "tcpwrappedms ", 13) == 0) {
         long waitms = strtol(line + 13, NULL, 10);
         if (waitms < 100 || waitms > 300000)
-          fatal(str_Error_119_conds_1687089026, lineno, filename);
+          fatal("Error on line %d of nmap-service-probes file (%s): bad tcpwrappedms value.  Must be between 100 and 300000 milliseconds", lineno, filename);
         newProbe->tcpwrappedms = waitms;
-      } else if (strncmp(line, str_match_6_tch32_840860388, 6) == 0 || strncmp(line, str_softm_10_tch32_637496186, 10) == 0) {
+      } else if (strncmp(line, "match ", 6) == 0 || strncmp(line, "softmatch ", 10) == 0) {
         newProbe->addMatch(line, lineno);
-      } else if (strncmp(line, str_Exclu_8_ude32_604834407, 8) == 0) {
-        fatal(str_The32_68_robes_1833279012);
-      } else fatal(str_Parse_75_ctive_1797500291, lineno, filename);
+      } else if (strncmp(line, "Exclude ", 8) == 0) {
+        fatal("The Exclude directive must precede all Probes in nmap-service-probes");
+      } else fatal("Parse error on line %d of nmap-service-probes file: %s -- unknown directive", lineno, filename);
     }
   }
 
@@ -1380,13 +1379,13 @@ void parse_nmap_service_probe_file(AllProbes *AP, const char *filename) {
 static void parse_nmap_service_probes(AllProbes *AP) {
   char filename[256];
 
-  if (nmap_fetchfile(filename, sizeof(filename), str_nmap4_19_robes_624465194) != 1){
-    fatal(str_Servi_66_ile46_980797608);
+  if (nmap_fetchfile(filename, sizeof(filename), "nmap-service-probes") != 1){
+    fatal("Service scan requested but I cannot find nmap-service-probes file.");
   }
 
   parse_nmap_service_probe_file(AP, filename);
   /* Record where this data file was found. */
-  o.loaded_data_files[str_nmap4_19_robes_624465194] = filename;
+  o.loaded_data_files["nmap-service-probes"] = filename;
 }
 
 AllProbes *AllProbes::global_AP;
@@ -1420,11 +1419,11 @@ int AllProbes::check_excluded_port(unsigned short portno, int proto)
     return 0;
 
   if (global_AP == NULL)
-    fatal(str_Faile_46_3237s_1931879990, __func__);
+    fatal("Failed to check the list of excluded ports: %s", __func__);
 
   if ((excluded = global_AP->isExcluded(portno, proto))) {
     if (o.debugging)
-      log_write(LOG_PLAIN, str_EXCLU_17_7s92n_879393779,
+      log_write(LOG_PLAIN, "EXCLUDING %d/%s\n",
                            portno, IPPROTO2STR(proto));
   }
 
@@ -1433,7 +1432,7 @@ int AllProbes::check_excluded_port(unsigned short portno, int proto)
 
 // If the buf (of length buflen) matches one of the regexes in this
 // ServiceProbe, returns the details of nth match (service name,
-// version number if applicable, and whether this is a str_soft_4_soft_3535914 match.
+// version number if applicable, and whether this is a "soft" match.
 // If the buf doesn't match, the serviceName field in the structure
 // will be NULL.  The MatchDetails returned is only valid until the
 // next time this function is called.  The only exception is that the
@@ -1524,7 +1523,7 @@ int AllProbes::isExcluded(unsigned short port, int proto) const {
     p = excludedports.sctp_ports;
     count = excludedports.sctp_count;
   } else {
-    fatal(str_Bad32_37_3237s_605607695, proto, __func__);
+    fatal("Bad proto number (%d) specified in %s", proto, __func__);
   }
 
   for (i=0; i<count; i++)
@@ -1557,30 +1556,30 @@ void AllProbes::compileFallbacks() {
 
     if ((*curr)->fallbackStr == NULL) {
       // A non-NULL probe without a fallback directive. We
-      // just use str_Itsel_11_4NULL_666816990 unless it's UDP, then just str_Itsel_6_tself_2094384361.
+      // just use "Itself,NULL" unless it's UDP, then just "Itself".
 
       (*curr)->fallbacks[0] = *curr;
       if ((*curr)->getProbeProtocol() == IPPROTO_TCP)
         (*curr)->fallbacks[1] = nullProbe;
     } else {
       // A non-NULL probe *with* a fallback directive. We use:
-      // TCP: str_Itsel_41_4NULL_827254159
-      // UDP: str_Itsel_36_veN62_1029123562
+      // TCP: "Itself,<directive1>,...,<directiveN>,NULL"
+      // UDP: "Itself,<directive1>,...,<directiveN>"
 
       (*curr)->fallbacks[0] = *curr;
       i = 1;
-      tp = strtok((*curr)->fallbackStr, str_4492r_8_92t32_461083070); // \r and \n because string will be terminated with them
+      tp = strtok((*curr)->fallbackStr, ",\r\n\t "); // \r and \n because string will be terminated with them
 
       while (tp != NULL && i<(MAXFALLBACKS-1)) {
         (*curr)->fallbacks[i] = getProbeByName(tp, (*curr)->getProbeProtocol());
         if ((*curr)->fallbacks[i] == NULL)
-          fatal(str_37s58_48_37s39_185107187, __func__, (*curr)->getName(), tp);
+          fatal("%s: Unknown fallback specified in Probe %s: '%s'", __func__, (*curr)->getName(), tp);
         i++;
-        tp = strtok(NULL, str_4492r_8_92t32_461083070);
+        tp = strtok(NULL, ",\r\n\t ");
       }
 
       if (i == MAXFALLBACKS-1)
-        fatal(str_37s58_39_37s39_53611053, __func__, (*curr)->getName());
+        fatal("%s: MAXFALLBACKS exceeded on probe '%s'", __func__, (*curr)->getName());
 
       if ((*curr)->getProbeProtocol() == IPPROTO_TCP)
         (*curr)->fallbacks[i] = nullProbe;
@@ -1635,11 +1634,11 @@ ServiceNFO::~ServiceNFO() {
 void ServiceNFO::addServiceChar(const char c, int wrapat) {
 
   if (servicefpalloc - servicefplen < 6)
-    fatal(str_37s32_31_icefp_54471801, __func__);
+    fatal("%s - out of space for servicefp", __func__);
 
   if (servicefplen % (wrapat+1) == wrapat) {
     // we need to start a new line
-    memcpy(servicefp + servicefplen, str_92nSF_5_nSF58_583688747, 4);
+    memcpy(servicefp + servicefplen, "\nSF:", 4);
     servicefplen += 4;
   }
 
@@ -1662,7 +1661,7 @@ void ServiceNFO::addToServiceFingerprint(const char *probeName, const u8 *resp,
   int servicewrap=74; // Wrap after 74 chars / line
   int respused = MIN(resplen, (o.debugging)? 1300 : 900); // truncate to reasonable size
   // every char could require \xHH escape, plus there is the matter of
-  // str_92nSF_5_nSF58_583688747 for each line, plus str_37r40_22_len44_563357334") Oh, and
+  // "\nSF:" for each line, plus "%r(probename,probelen,"") Oh, and
   // the SF-PortXXXX-TCP stuff, etc
   int spaceneeded = respused * 5 + strlen(probeName) + 128;
   int srcidx;
@@ -1690,22 +1689,22 @@ void ServiceNFO::addToServiceFingerprint(const char *probeName, const u8 *resp,
     timep = time(NULL);
     err = n_localtime(&timep, &ltime);
     if (err)
-      error(str_Error_22_3237s_857837152, strerror(err));
-    Snprintf(buf, sizeof(buf), str_SF45P_50_6137s_206942214,
+      error("Error in localtime: %s", strerror(err));
+    Snprintf(buf, sizeof(buf), "SF-Port%hu-%s:V=%s%s%%I=%d%%D=%d/%d%%Time=%X%%P=%s",
         portno, proto2ascii_uppercase(proto), NMAP_VERSION,
-        (tunnel == SERVICE_TUNNEL_SSL)? str_37T61_6_61SSL_1581630239 : "", o.version_intensity,
+        (tunnel == SERVICE_TUNNEL_SSL)? "%T=SSL" : "", o.version_intensity,
         err ? 0 : ltime.tm_mon + 1, err ? 0 : ltime.tm_mday, (int) timep, NMAP_PLATFORM);
     addServiceString(buf, servicewrap);
   }
 
   // Note that we give the total length of the response, even though we
   // may truncate
-  Snprintf(buf, sizeof(buf), str_3737r_12_49234_105747429, probeName, resplen);
+  Snprintf(buf, sizeof(buf), "%%r(%s,%X,\"", probeName, resplen);
   addServiceString(buf, servicewrap);
 
   // Now for the probe response itself ...
   for(srcidx=0; srcidx < respused; srcidx++) {
-    // A run of this can take up to 8 chars: str_92n32_8_92x20_2026902506
+    // A run of this can take up to 8 chars: "\n  \x20"
     assert(servicefpalloc - servicefplen > 8);
 
     if (isalnum((int)resp[srcidx]))
@@ -1714,23 +1713,23 @@ void ServiceNFO::addToServiceFingerprint(const char *probeName, const u8 *resp,
       /* We need to be careful with this, because if it is followed by
          an ASCII number, PCRE will treat it differently. */
       if (srcidx + 1 >= respused || !isdigit((int) resp[srcidx + 1]))
-        addServiceString(str_92920_3_92920_54186622, servicewrap);
-      else addServiceString(str_9292x_5_92x00_533806918, servicewrap);
-    } else if (strchr(str_92926_15_94124_1048024898, resp[srcidx])) {
+        addServiceString("\\0", servicewrap);
+      else addServiceString("\\x00", servicewrap);
+    } else if (strchr("\\?\"[]().*+$^|", resp[srcidx])) {
       addServiceChar('\\', servicewrap);
       addServiceChar(resp[srcidx], servicewrap);
     } else if (ispunct((int)resp[srcidx])) {
       addServiceChar((char) resp[srcidx], servicewrap);
     } else if (resp[srcidx] == '\r') {
-      addServiceString(str_9292r_3_9292r_54186688, servicewrap);
+      addServiceString("\\r", servicewrap);
     } else if (resp[srcidx] == '\n') {
-      addServiceString(str_9292n_3_9292n_54186684, servicewrap);
+      addServiceString("\\n", servicewrap);
     } else if (resp[srcidx] == '\t') {
-      addServiceString(str_9292t_3_9292t_54186690, servicewrap);
+      addServiceString("\\t", servicewrap);
     } else {
       addServiceChar('\\', servicewrap);
       addServiceChar('x', servicewrap);
-      Snprintf(buf, sizeof(buf), str_3702x_4_3702x_48785874, resp[srcidx]);
+      Snprintf(buf, sizeof(buf), "%02x", resp[srcidx]);
       addServiceChar(*buf, servicewrap);
       addServiceChar(*(buf+1), servicewrap);
     }
@@ -1856,7 +1855,7 @@ bool dropdown = false;
    return NULL;
  }
 
- fatal(str_37s32_33_37d41_986112838, __func__, (int) probe_state);
+ fatal("%s called for probe in state (%d)", __func__, (int) probe_state);
  return NULL;
 }
 
@@ -1929,7 +1928,7 @@ ServiceGroup::ServiceGroup(std::vector<Target *> &Targets, AllProbes *AP) {
   num_hosts_timedout = 0;
   gettimeofday(&now, NULL);
 
-  SPM = new ScanProgressMeter(str_Servi_12_2scan_2050744369);
+  SPM = new ScanProgressMeter("Service scan");
   for(targetno = 0 ; targetno < Targets.size(); targetno++) {
     Target *target = Targets[targetno];
     assert(target);
@@ -1970,7 +1969,7 @@ ServiceGroup::ServiceGroup(std::vector<Target *> &Targets, AllProbes *AP) {
             i != services_remaining.end(); i++) {
           svc = *i;
           if (svc->proto == IPPROTO_UDP && svc->portno == esr->pspec.pd.udp.dport) {
-            if (processMatch(MD, svc, str_port3_9_2scan_1100744419, str_udp32_11_yload_845195182)
+            if (processMatch(MD, svc, "port scan", "udp payload")
                 && !scanThroughTunnel(svc)) {
               end_svcprobe(PROBESTATE_FINISHED_HARDMATCHED, this, svc, NULL);
             }
@@ -2024,7 +2023,7 @@ static void adjustPortStateIfNecessary(ServiceNFO *svc) {
     if (o.verbose || o.debugging > 1) {
       svc->target->NameIP(host, sizeof(host));
 
-      log_write(LOG_STDOUT, str_Disco_50_en92n_282515125,
+      log_write(LOG_STDOUT, "Discovered %s port %hu/%s on %s is actually open\n",
          statenum2str(oldstate), svc->portno, proto2ascii_lowercase(svc->proto), host);
       log_flush(LOG_STDOUT);
     }
@@ -2042,7 +2041,7 @@ static void adjustPortStateIfNecessary(ServiceNFO *svc) {
 
     // Report data as probes are sent if --version-trace has been requested
     if (o.debugging > 1 || o.versionTrace()) {
-      log_write(LOG_PLAIN, str_Servi_46_4192n_984911205, probe->getName(), svc->target->targetipstr(), svc->portno, proto2ascii_lowercase(svc->proto));
+      log_write(LOG_PLAIN, "Service scan sending probe %s to %s:%hu (%s)\n", probe->getName(), svc->target->targetipstr(), svc->portno, proto2ascii_lowercase(svc->proto));
     }
 
     assert(probe);
@@ -2093,7 +2092,7 @@ static void startNextProbe(nsock_pool nsp, nsock_iod nsi, ServiceGroup *SG,
       probe = svc->nextProbe(true); // if was initial, currentProbe() returned the right one to execute.
     if (probe) {
       if ((svc->niod = nsock_iod_new(nsp, svc)) == NULL) {
-        fatal(str_Faile_47_s4041_234816117, __func__);
+        fatal("Failed to allocate Nsock I/O descriptor in %s()", __func__);
       }
       if (o.spoofsource) {
         o.SourceSockAddr(&ss, &ss_len);
@@ -2103,7 +2102,7 @@ static void startNextProbe(nsock_pool nsp, nsock_iod nsi, ServiceGroup *SG,
         nsock_iod_set_ipoptions(svc->niod, o.ipoptions, o.ipoptionslen);
       if (svc->target->TargetName()) {
         if (nsock_iod_set_hostname(svc->niod, svc->target->TargetName()) == -1)
-          fatal(str_nsock_44_s4041_310331291,
+          fatal("nsock_iod_set_hostname(\"%s\" failed in %s()",
                 svc->target->TargetName(), __func__);
       }
       svc->target->TargetSockAddr(&ss, &ss_len);
@@ -2138,7 +2137,7 @@ static void startNextProbe(nsock_pool nsp, nsock_iod nsi, ServiceGroup *SG,
 
 /* Sometimes the normal service scan will detect a
    tunneling/encryption protocol such as SSL.  Instead of just
-   reporting str_ssl_3_ssl_114188, we can make an SSL connection and try to determine
+   reporting "ssl", we can make an SSL connection and try to determine
    the service that is really sitting behind the SSL.  This function
    will take a service that has just been detected (hard match only),
    and see if we can dig deeper through tunneling.  Nonzero is
@@ -2152,7 +2151,7 @@ static void startNextProbe(nsock_pool nsp, nsock_iod nsi, ServiceGroup *SG,
 
 static int scanThroughTunnel(ServiceNFO *svc) {
 
-  if (svc->probe_matched && strncmp(svc->probe_matched, str_ssl47_4_ssl47_109736335, 4) == 0) {
+  if (svc->probe_matched && strncmp(svc->probe_matched, "ssl/", 4) == 0) {
     /* The service has been detected without having to make an SSL connection */
     svc->tunnel = SERVICE_TUNNEL_SSL;
     svc->probe_matched += 4;
@@ -2167,11 +2166,11 @@ static int scanThroughTunnel(ServiceNFO *svc) {
 
   if (!svc->probe_matched ||
       (strcmp(svc->probe_matched, "ssl") != 0 &&
-       strcmp(svc->probe_matched, str_dtls_4_dtls_3094039) != 0))
+       strcmp(svc->probe_matched, "dtls") != 0))
     return 0; // Not SSL
 
   // Alright!  We are going to start the tests over using SSL
-  // printf(str_DBG58_54_an92n_1955594513, svc->target->NameIP(), svc->portno);
+  // printf("DBG: Found SSL service on %s:%hu - starting SSL scan\n", svc->target->NameIP(), svc->portno);
   svc->tunnel = SERVICE_TUNNEL_SSL;
   svc->probe_matched = NULL;
   svc->product_matched[0] = svc->version_matched[0] = svc->extrainfo_matched[0] = '\0';
@@ -2292,7 +2291,7 @@ static int launchSomeServiceProbes(nsock_pool nsp, ServiceGroup *SG) {
 
     if (svc->probe_state == PROBESTATE_FINISHED_NOMATCH) {
       if (warn_no_scanning && o.debugging) {
-        log_write(LOG_PLAIN, str_Servi_59_ty92n_2112160967);
+        log_write(LOG_PLAIN, "Service scan: Not probing some ports due to low intensity\n");
         warn_no_scanning=0;
       }
       continue;
@@ -2361,7 +2360,7 @@ static void servicescan_connect_handler(nsock_pool nsp, nsock_event nse, void *m
         // be timing out like that.  We'll mark this svc as incomplete
         // and move it to the finished bin.
         if (o.debugging)
-          error(str_Got32_65_rvice_1863727758, nse_status2str(status));
+          error("Got nsock CONNECT response with status %s - aborting this service", nse_status2str(status));
         end_svcprobe(PROBESTATE_INCOMPLETE, SG, svc, nsi);
         break;
 
@@ -2372,7 +2371,7 @@ static void servicescan_connect_handler(nsock_pool nsp, nsock_event nse, void *m
         return;
 
       default:
-        fatal(str_Unexp_60_tempt_1290386812, (int)status);
+        fatal("Unexpected nsock status (%d) returned for connection attempt", (int)status);
     }
   }
   // We may have room for more probes!
@@ -2415,13 +2414,13 @@ static void servicescan_write_handler(nsock_pool nsp, nsock_event nse, void *myd
 
   if (status == NSE_STATUS_ERROR || status == NSE_STATUS_PROXYERROR) {
         err = nse_errorcode(nse);
-        error(str_Got32_30_37s41_2115477406, err, strerror(err));
+        error("Got nsock WRITE error #%d (%s)", err, strerror(err));
   }
 
   // Uh-oh.  Some sort of write failure ... maybe the connection closed
   // on us unexpectedly?
   if (o.debugging)
-    error(str_Got32_63_rvice_1736195417, nse_status2str(status));
+    error("Got nsock WRITE response with status %s - aborting this service", nse_status2str(status));
   end_svcprobe(PROBESTATE_INCOMPLETE, SG, svc, nsi);
 
   // We may have room for more probes!
@@ -2439,18 +2438,18 @@ static bool processMatch(const struct MatchDetails *MD, ServiceNFO *svc,
   // WOO HOO!!!!!!  MATCHED!  But might be soft
   if (MD->isSoft && svc->probe_matched) {
     if (strcmp(svc->probe_matched, MD->serviceName) != 0)
-      error(str_WARNI_99_value_1786036178, svc->target->targetipstr(), svc->portno, svc->probe_matched, MD->serviceName);
+      error("WARNING: Service %s:%hu had already soft-matched %s, but now soft-matched %s; ignoring second value", svc->target->targetipstr(), svc->portno, svc->probe_matched, MD->serviceName);
     // No error if its the same - that happens frequently.  For
     // example, if we read more data for the same probe response
     // it will probably still match.
     return false;
   }
   if (o.debugging > 1 || o.versionTrace()) {
-    log_write(LOG_PLAIN, str_Servi_96_2492n_1584705866,
-        (MD->isSoft)? str_soft_4_soft_3535914 : str_hard_4_hard_3195115,
+    log_write(LOG_PLAIN, "Service scan %s match (Probe %s matched with %s line %d): %s:%hu is %s%s.  Version: |%s|%s|%s|\n",
+        (MD->isSoft)? "soft" : "hard",
         probeName, fallbackName,
         MD->lineno,
-        svc->target->targetipstr(), svc->portno, (svc->tunnel == SERVICE_TUNNEL_SSL)? str_SSL47_4_SSL47_79199599 : "",
+        svc->target->targetipstr(), svc->portno, (svc->tunnel == SERVICE_TUNNEL_SSL)? "SSL/" : "",
         MD->serviceName, (MD->product)? MD->product : "", (MD->version)? MD->version : "",
         (MD->info)? MD->info : "");
   }
@@ -2625,7 +2624,7 @@ static void servicescan_read_handler(nsock_pool nsp, nsock_event nse, void *myda
 #ifdef EPROTO
     case EPROTO:
       // EPROTO is suspected to be caused by an active IDS/IPS that forges ICMP
-      // type-12 errors (str_Param_17_oblem_2033993225). It's been seen in response to the
+      // type-12 errors ("Parameter problem"). It's been seen in response to the
       // Sqlping probe.
 #endif
     case EIO:
@@ -2634,7 +2633,7 @@ static void servicescan_read_handler(nsock_pool nsp, nsock_event nse, void *myda
       startNextProbe(nsp, nsi, SG, svc, true);
       break;
     default:
-      fatal(str_Unexp_64_37s41_913180950, err,
+      fatal("Unexpected error in NSE_TYPE_READ callback.  Error code: %d (%s)", err,
             socket_strerror(err));
     }
   } else if (status == NSE_STATUS_KILL) {
@@ -2644,7 +2643,7 @@ static void servicescan_read_handler(nsock_pool nsp, nsock_event nse, void *myda
     end_svcprobe(PROBESTATE_INCOMPLETE, SG, svc, nsi);
     return;
   } else {
-    fatal(str_Unexp_49_ack46_1746338635, (int) status);
+    fatal("Unexpected status (%d) in NSE_TYPE_READ callback.", (int) status);
   }
 
   // We may have room for more probes!
@@ -2722,13 +2721,13 @@ static void remove_excluded_ports(AllProbes *AP, ServiceGroup *SG) {
     svc = *i;
     if (AP->isExcluded(svc->portno, svc->proto)) {
 
-      if (o.debugging) log_write(LOG_PLAIN, str_EXCLU_17_7s92n_879393779, svc->portno,
+      if (o.debugging) log_write(LOG_PLAIN, "EXCLUDING %d/%s\n", svc->portno,
           IPPROTO2STR(svc->proto));
 
       svc->target->ports.setServiceProbeResults(svc->portno, svc->proto,
                                         PROBESTATE_EXCLUDED, NULL,
                                         SERVICE_TUNNEL_NONE,
-                                        str_Exclu_26_2scan_625850654, NULL,
+                                        "Excluded from version scan", NULL,
                                         NULL, NULL, NULL, NULL, NULL, NULL);
 
       SG->services_remaining.erase(i);
@@ -2761,7 +2760,7 @@ int service_scan(std::vector<Target *> &Targets) {
   SG = new ServiceGroup(Targets, AP);
 
   if (o.override_excludeports) {
-    if (o.debugging || o.verbose) log_write(LOG_PLAIN, str_Overr_81_3392n_1749977581);
+    if (o.debugging || o.verbose) log_write(LOG_PLAIN, "Overriding exclude ports option! Some undesirable ports may be version scanned!\n");
   } else {
     remove_excluded_ports(AP, SG);
   }
@@ -2778,18 +2777,18 @@ int service_scan(std::vector<Target *> &Targets) {
     bool plural = (Targets.size() != 1);
     if (!plural) {
       (*(Targets.begin()))->NameIP(targetstr, sizeof(targetstr));
-    } else Snprintf(targetstr, sizeof(targetstr), str_37u32_8_hosts_463683301, (unsigned) Targets.size());
+    } else Snprintf(targetstr, sizeof(targetstr), "%u hosts", (unsigned) Targets.size());
 
-    log_write(LOG_STDOUT, str_Scann_22_7s92n_139004558,
+    log_write(LOG_STDOUT, "Scanning %u %s on %s\n",
               (unsigned) SG->services_remaining.size(),
-              (SG->services_remaining.size() == 1)? str_servi_7_rvice_1984153269 : str_servi_8_vices_1379209310,
+              (SG->services_remaining.size() == 1)? "service" : "services",
               targetstr);
   }
 
   // Lets create a nsock pool for managing all the concurrent probes
   // Store the servicegroup in there for availability in callbacks
   if ((nsp = nsock_pool_new(SG)) == NULL) {
-    fatal(str_37s40_37_ool46_1082164216, __func__);
+    fatal("%s() failed to create new nsock pool.", __func__);
   }
   nmap_set_nsock_logger();
   nmap_adjust_loglevel(o.versionTrace());
@@ -2816,7 +2815,7 @@ int service_scan(std::vector<Target *> &Targets) {
   looprc = nsock_loop(nsp, timeout);
   if (looprc == NSOCK_LOOP_ERROR) {
     int err = nsock_pool_get_error(nsp);
-    fatal(str_Unexp_48_37s41_992458019, err, socket_strerror(err));
+    fatal("Unexpected nsock_loop error.  Error code %d (%s)", err, socket_strerror(err));
   }
 
   nsock_pool_delete(nsp);
@@ -2824,13 +2823,13 @@ int service_scan(std::vector<Target *> &Targets) {
   if (o.verbose) {
     char additional_info[128];
     if (SG->num_hosts_timedout == 0)
-      Snprintf(additional_info, sizeof(additional_info), str_37u32_14_3237s_9908187,
+      Snprintf(additional_info, sizeof(additional_info), "%u %s on %u %s",
                 (unsigned) SG->services_finished.size(),
-                (SG->services_finished.size() == 1)? str_servi_7_rvice_1984153269 : str_servi_8_vices_1379209310,
-                (unsigned) Targets.size(), (Targets.size() == 1)? str_host_4_host_3208616 : str_hosts_5_hosts_99467211);
-    else Snprintf(additional_info, sizeof(additional_info), str_37u32_15_32out_1011163978,
+                (SG->services_finished.size() == 1)? "service" : "services",
+                (unsigned) Targets.size(), (Targets.size() == 1)? "host" : "hosts");
+    else Snprintf(additional_info, sizeof(additional_info), "%u %s timed out",
                    SG->num_hosts_timedout,
-                   (SG->num_hosts_timedout == 1)? str_host_4_host_3208616 : str_hosts_5_hosts_99467211);
+                   (SG->num_hosts_timedout == 1)? "host" : "hosts");
     SG->SPM->endTask(NULL, additional_info);
   }
 
